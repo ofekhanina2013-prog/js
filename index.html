@@ -1,0 +1,1973 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>Saiyan Hunter: The True Ultimate Edition</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: #87CEEB; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        canvas { display: block; }
+        #ui { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; }
+        .overlay { position: absolute; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.7); color: white; pointer-events: auto; z-index: 100; text-align: center; backdrop-filter: blur(10px); }
+        #hud { position: absolute; top: 20px; right: 20px; color: white; background: rgba(0,0,0,0.8); padding: 20px; border-radius: 15px; border: 3px solid #fbff00; display: none; min-width: 280px; backdrop-filter: blur(5px); box-shadow: 0 0 15px rgba(251, 255, 0, 0.5); }
+        .bar-container { width: 100%; height: 20px; background: #222; border-radius: 10px; margin: 8px 0; overflow: hidden; border: 2px solid #fff; box-shadow: inset 0 0 5px black; }
+        #charge-container { display:none; }
+        #charge-bar { height:100%; width:0; background: linear-gradient(90deg, #00f6ff, #00aaff 35%, #88ffff); box-shadow: 0 0 14px rgba(0, 220, 255, 0.5); transition: width 0.08s ease; }
+        #hp-boss { width: 100%; height: 100%; background: linear-gradient(90deg, #ff0000, #ff5555); transition: width 0.2s ease-out; }
+        #hp-player { width: 100%; height: 100%; background: linear-gradient(90deg, #00aa00, #55ff55); transition: width 0.2s ease-out; }
+        button { padding: 18px 55px; font-size: 26px; cursor: pointer; background: linear-gradient(180deg, #fbff00, #d4d700); border: none; font-weight: bold; border-radius: 50px; margin: 10px; box-shadow: 0 6px 0 #9c9e00; transition: 0.1s; color: #333; text-transform: uppercase; }
+        button:hover { transform: scale(1.05); filter: brightness(1.2); }
+        button:active { transform: translateY(6px); box-shadow: none; }
+        #crosshair { position: absolute; top: 50%; left: 50%; width: 24px; height: 24px; border: 2px solid rgba(255,255,255,0.8); border-radius: 50%; transform: translate(-50%, -50%); display: none; }
+        #crosshair::after { content: ''; position: absolute; top: 50%; left: 50%; width: 6px; height: 6px; background: red; border-radius: 50%; transform: translate(-50%, -50%); }
+
+        #lobby { justify-content: flex-start; overflow-y: auto; padding-top: 40px; }
+        #shop-menu, #bp-menu { display: none; background: rgba(4, 8, 22, 0.96); border: 4px solid #00aaff; padding: 30px; border-radius: 24px; max-width: 80%; box-shadow: 0 0 40px rgba(0, 170, 255, 0.4); backdrop-filter: blur(10px); }
+        #shop-menu { max-height: 75vh; overflow-y: auto; }
+        .item-card { background: rgba(255,255,255,0.08); padding: 22px; margin: 10px; border-radius: 18px; border: 1px solid #00aaff; display: inline-block; width: 160px; vertical-align: top; transition: 0.2s; box-shadow: 0 0 15px rgba(0,170,255,0.15); }
+        #split-toggle-btn { background: linear-gradient(180deg, #ff66cc, #cc0099); box-shadow: 0 6px 0 #770044; color: white; }
+        #split-toggle-btn:hover { background: linear-gradient(180deg, #ff88dd, #dd33aa); }
+        #time-room-button { background: linear-gradient(180deg, #ff8844, #cc5500); box-shadow: 0 6px 0 #773300; color: white; }
+        #time-room-button:hover { background: linear-gradient(180deg, #ffaa77, #dd7733); }
+        .item-card:hover { transform: translateY(-5px); background: rgba(255,255,255,0.15); }
+        #map-selector { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 20px; }
+        #map-selector button { font-size: 14px; padding: 10px 14px; border-radius: 12px; border: none; cursor: pointer; background: linear-gradient(180deg, #334455, #001122); color: white; box-shadow: 0 4px 0 rgba(0,0,0,0.3); transition: 0.2s; }
+        #map-selector button:hover { transform: scale(1.02); background: linear-gradient(180deg, #445566, #112233); }
+        #universe-grid { display: grid; grid-template-columns: repeat(2, minmax(180px, 1fr)); gap: 12px; width: 100%; max-width: 760px; margin: 20px auto; }
+        #universe-grid button { background: linear-gradient(180deg, #ff5555, #cc0000); color: white; font-size: 18px; padding: 14px 18px; border-radius: 14px; box-shadow: 0 5px 0 #880000; }
+        #universe-grid button:hover { background: linear-gradient(180deg, #ff8888, #dd3333); }
+        #selected-map { color: #00ffff; font-weight: bold; }
+        #doge-overlay { display: none; align-items: center; justify-content: center; background: rgba(0,0,0,0.88); color: #ffe430; pointer-events: none; z-index: 200; }
+        #doge-overlay div { font-size: 42px; text-shadow: 0 0 25px #ff9000; line-height: 1.1; white-space: pre-line; }
+        #bp-bar-ui { width: 350px; height: 30px; background: #111; border: 3px solid gold; border-radius: 15px; position: relative; margin: 20px 0; overflow: hidden; }
+        #bp-progress { height: 100%; width: 0%; background: linear-gradient(90deg, #ff00ff, #00ffff); border-radius: 10px; transition: width 0.5s ease; box-shadow: 0 0 10px #00ffff; }
+        .controls-info { font-size: 16px; color: #ccc; margin-top: 20px; line-height: 1.5; background: rgba(0,0,0,0.5); padding: 15px; border-radius: 10px; }
+    </style>
+</head>
+<body>
+
+    <div id="ui">
+        <div id="lobby" class="overlay">
+            <h1 style="font-size: 80px; color: #fbff00; -webkit-text-stroke: 3px #000; margin-bottom: 5px; text-shadow: 0 0 20px #fbff00;">SAIYAN HUNTER</h1>
+            <h2 style="color: white; margin-top: 0;">בחר יקום להתחלה</h2>
+            <div id="bp-container">
+                <div style="color: gold; font-weight: bold; font-size: 24px;">BATTLE PASS LEVEL <span id="bp-lvl">1</span></div>
+                <div id="bp-bar-ui"><div id="bp-progress"></div></div>
+            </div>
+            
+            <div id="loading-msg" style="color: gold; font-size: 24px;">בחר יקום כדי להתחיל את הקרב</div>
+            <div id="result-msg" style="display:none; color:#ff4444; font-size: 30px; margin-bottom: 15px; font-weight: bold; text-shadow: 0 0 10px red;">הובסת! תחזור לחדר הזמן להתאמן.</div>
+            
+            <div id="universe-grid">
+                <button onclick="startGame('u1')">התחל יקום 1</button>
+                <button onclick="startGame('u2')">התחל יקום 2</button>
+                <button onclick="startGame('u3')">התחל יקום 3</button>
+                <button onclick="startGame('u4')">התחל יקום 4</button>
+                <button onclick="startGame('u5')">התחל יקום 5</button>
+                <button onclick="startGame('u6')">התחל יקום 6</button>
+                <button onclick="startGame('u7')">התחל יקום 7</button>
+                <button onclick="startGame('u8')">התחל יקום 8</button>
+                <button onclick="startGame('u9')">התחל יקום 9</button>
+                <button onclick="startGame('u10')">התחל יקום 10</button>
+            </div>
+            <div id="main-btns">
+                <button id="split-toggle-btn" onclick="toggleSplitMode()">מצב 2 שחקנים: כבוי</button>
+                <button id="party-toggle-btn" onclick="togglePartyMode()">מצב מסיבה: כבוי</button>
+                <button id="time-room-button" onclick="enterTimeRoom()">חדר זמן</button>
+                <button onclick="toggleShop(true)" style="background: linear-gradient(180deg, #00ccff, #0088cc); box-shadow: 0 6px 0 #005588; color: white;">חנות לוחמים ופריטים</button>
+            </div>
+            <div id="map-selector">
+                <button onclick="selectMap(0)">Planet Namek</button>
+                <button onclick="selectMap(1)">King Kai</button>
+                <button onclick="selectMap(2)">Cell Games</button>
+                <button onclick="selectMap(3)">Rocky Stadium</button>
+                <button onclick="selectMap(4)">Broly Field</button>
+                <button onclick="selectMap(5)">Planet Vegeta</button>
+                <button onclick="selectMap(6)">Supreme Kai Realm</button>
+            </div>
+            <div style="margin-top: 8px; font-size: 18px; color: #fff;">מפה נבחרת: <span id="selected-map">Planet Namek</span></div>
+            
+            <div id="shop-menu">
+                <h2 style="color: #00aaff; font-size: 36px; margin-top: 0;">החנות של קורירין</h2>
+                
+                <div class="item-card">
+                    <h3 style="margin: 0 0 10px 0; color: #55ff55;">שעועית סנזו</h3>
+                    <button style="font-size: 16px; padding: 10px; width: 100%; background: #228b22; color: white;" onclick="buySenzu(200)">200 Gold</button>
+                    <p style="font-size: 12px; margin-top:5px; color:#ccc;">לחץ H בקרב לריפוי מלא</p>
+                </div>
+                
+                <div class="item-card">
+                    <h3 style="margin: 0 0 10px 0; color: white;">סקין וג'יטה</h3>
+                    <button style="font-size: 16px; padding: 10px; width: 100%;" onclick="buySkin('vegeta', 500)">500 Gold</button>
+                </div>
+                
+                <div class="item-card">
+                    <h3 style="margin: 0 0 10px 0; color: white;">סקין טראנקס</h3>
+                    <button style="font-size: 16px; padding: 10px; width: 100%;" onclick="buySkin('trunks', 1000)">1000 Gold</button>
+                </div>
+
+                <div class="item-card">
+                    <h3 style="margin: 0 0 10px 0; color: #ffaaaa;">גוקו בלאק</h3>
+                    <button style="font-size: 16px; padding: 10px; width: 100%; background: #444; color: white;" onclick="buySkin('gokublack', 1500)">1500 Gold</button>
+                </div>
+
+                <div class="item-card">
+                    <h3 style="margin: 0 0 10px 0; color: #ffcc00;">צ'אמפה</h3>
+                    <button style="font-size: 16px; padding: 10px; width: 100%; background: #aa6600; color: white;" onclick="buySkin('champa', 1200)">1200 Gold</button>
+                </div>
+
+                <div class="item-card">
+                    <h3 style="margin: 0 0 10px 0; color: #ffffff;">היט</h3>
+                    <button style="font-size: 16px; padding: 10px; width: 100%; background: #222; color: white;" onclick="buySkin('hit', 1500)">1500 Gold</button>
+                </div>
+
+                <div class="item-card">
+                    <h3 style="margin: 0 0 10px 0; color: #7ec850;">קבה SSJ</h3>
+                    <button style="font-size: 16px; padding: 10px; width: 100%; background: #004400; color: white;" onclick="buySkin('cabba', 800)">800 Gold</button>
+                </div>
+
+                <div class="item-card">
+                    <h3 style="margin: 0 0 10px 0; color: #55ff55;">קייל לג'נדארי</h3>
+                    <button style="font-size: 16px; padding: 10px; width: 100%; background: #005500; color: white;" onclick="buySkin('kale', 1200)">1200 Gold</button>
+                </div>
+
+                <div class="item-card">
+                    <h3 style="margin: 0 0 10px 0; color: #ffcc00;">DOGE ALT MODE</h3>
+                    <button style="font-size: 16px; padding: 10px; width: 100%; background: #b18f00; color: white;" onclick="buySkin('doge', 1400)">1400 Gold</button>
+                    <p style="font-size: 12px; margin-top:5px; color:#ccc;">הפוך ל-DOGE ALT עם הילה משוגעת ואנרגיה חמודה.</p>
+                </div>
+
+                <div class="item-card">
+                    <h3 style="margin: 0 0 10px 0; color: #ff6600;">סקין גוקו</h3>
+                    <button style="font-size: 16px; padding: 10px; width: 100%; background: #ff8c00; color: white;" onclick="buySkin('goku', 650)">650 Gold</button>
+                </div>
+
+                <div class="item-card">
+                    <h3 style="margin: 0 0 10px 0; color: #6644cc;">בירהוס</h3>
+                    <button style="font-size: 16px; padding: 10px; width: 100%; background: #552288; color: white;" onclick="buySkin('beerus', 1800)">1800 Gold</button>
+                </div>
+
+                <div class="item-card">
+                    <h3 style="margin: 0 0 10px 0; color: #ff99ff;">וויס</h3>
+                    <button style="font-size: 16px; padding: 10px; width: 100%; background: #eeccff; color: #111;" onclick="buySkin('whis', 2000)">2000 Gold</button>
+                </div>
+
+                <div class="item-card">
+                    <h3 style="margin: 0 0 10px 0; color: #55ff55;">ברולי</h3>
+                    <button style="font-size: 16px; padding: 10px; width: 100%; background: #228822; color: white;" onclick="buySkin('broly', 2200)">2200 Gold</button>
+                </div>
+
+                <div class="item-card">
+                    <h3 style="margin: 0 0 10px 0; color: #aa00ff;">Ultra Ego</h3>
+                    <button style="font-size: 16px; padding: 10px; width: 100%; background: #aa00ff; color: white;" onclick="buySkin('ultraego', 2400)">2400 Gold</button>
+                </div>
+
+                <div class="item-card">
+                    <h3 style="margin: 0 0 10px 0; color: #33cc99;">זמאסו</h3>
+                    <button style="font-size: 16px; padding: 10px; width: 100%; background: #33cc99; color: #111;" onclick="buySkin('zamasu', 2200)">2200 Gold</button>
+                </div>
+
+                <div class="item-card">
+                    <h3 style="margin: 0 0 10px 0; color: white;">איכות ULTRA</h3>
+                    <button style="font-size: 16px; padding: 10px; width: 100%; background: linear-gradient(180deg, #ff00ff, #aa00aa); box-shadow: 0 5px 0 #660066; color: white;" onclick="setUltraQuality()">הפעל</button>
+                </div>
+                
+                <br>
+                <button onclick="toggleShop(false)" style="background: linear-gradient(180deg, #ff5555, #cc0000); box-shadow: 0 5px 0 #880000; margin-top: 20px; color: white;">חזור ללובי</button>
+            </div>
+            
+            <p style="margin-top: 20px; font-size: 24px;">זהב שברשותך: <span class="gold-display" style="color: gold; font-weight: bold;">0</span> | שעועית סנזו: <span id="senzu-lobby-display" style="color: #55ff55;">0</span></p>
+            
+            <div class="controls-info">
+                <strong>שחקן 1:</strong> WASD לתנועה | עכבר לכיוון | 0 להחלפת מצלמה<br>
+                <strong>שחקן 2:</strong> חיצים לתנועה | U/O לסיבוב | V = ירי רגיל | B = התקפה מיוחדת | N = קרן מיוחדת | M = פיינל פלאש<br>
+                <strong>תנועה מיוחדת:</strong> רווח כפול (Space) לעוף | במצב תעופה: רווח לעלות, Shift לרדת | <strong>E</strong> = השתגרות (Instant Transmission)<br>
+                <strong>שינוי צורה:</strong> R = סופר סאייה | T = בלו | Y = אולטרה אינסטינקט | F = קבה SSJ | G = קייל לג'נדארי<br>
+                <strong>מתקפות שחקן 1:</strong> 1 = מכת קי רגילה | 2 = קיינזאן | 3 = תותח קרן | 4 = פיינל פלאש | 5 = קמהאמהא (החזק לחיזוק) | 6 = כדור גנקי | 7 = התקפת זרוע מהירה | 8 = סופרנובה<br>
+                <strong>מתקפות שחקן 2:</strong> V = ירי רגיל | B = התקפה מיוחדת | N = קרן מיוחדת | M = פיינל פלאש<br>
+                <strong>פריטים:</strong> H = אכילת שעועית סנזו (ריפוי מלא)
+            </div>
+        </div>
+
+        <div id="pause-overlay" class="overlay" style="display:none;">
+            <h1 style="font-size: 60px; color: #fbff00; text-shadow: 0 0 20px #fbff00;">המשחק מושהה</h1>
+            <button onclick="togglePause()">המשך בקרב</button>
+            <button onclick="location.reload()" style="background: linear-gradient(180deg, #ff5555, #cc0000); box-shadow: 0 5px 0 #880000; color: white;">יציאה לתפריט (Exit)</button>
+        </div>
+
+        <div id="doge-overlay">
+            <div>WOW\nSUCH POWER\nALT DOGE MODE</div>
+        </div>
+
+        <div id="hud">
+            <div id="boss-name-ui" style="font-size: 18px; color: #ff5555; font-weight: bold; text-shadow: 0 0 5px red;">BOSS: GOKU SSJ</div>
+            <div class="bar-container"><div id="hp-boss"></div></div>
+            <div style="font-size: 16px; color: #55ff55; font-weight: bold; margin-top: 10px; text-shadow: 0 0 5px green;">YOUR HP</div>
+            <div class="bar-container"><div id="hp-player"></div></div>
+            <div id="status" style="margin-top:15px; font-weight: bold; color:#fff; font-size: 20px; text-shadow: 0 0 10px white;">NORMAL FORM</div>
+            <div id="attack-name-ui" style="margin-top:8px; font-weight: bold; color:#88ccff; font-size: 18px; text-shadow: 0 0 8px #88ccff; min-height: 24px;"></div>
+            <div id="charge-container" class="bar-container" style="display:none; margin-top: 6px; background: rgba(255,255,255,0.05); border: 2px solid #00ccff;">
+                <div id="charge-bar" style="width:0; height:100%; background: linear-gradient(90deg, #00ccff, #0044ff); transition: width 0.1s ease;"></div>
+            </div>
+            <div style="color: gold; font-size: 20px; margin-top: 10px; font-weight: bold; text-shadow: 0 0 5px gold;">GOLD: <span class="gold-display">0</span></div>
+            <div style="color: #55ff55; font-size: 18px; margin-top: 5px; font-weight: bold;">SENZU BEANS: <span id="senzu-hud-display">0</span> <span style="font-size:12px;">(Press H)</span></div>
+        </div>
+        <div id="crosshair"></div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <script>
+        let scene, camera, renderer, player, boss, aura, pHead, pTorso, pLArm, pRArm, pLLeg, pRLeg;
+        let bHead, bTorso, bLArm, bRArm, bLLeg, bRLeg; 
+        let active = false, isPaused = false, keys = {}, bullets = [];
+        let pHP = 150, bHP = 1500, gold = 0, senzuBeans = 0, ssj = 0, isTPS = true, pitch = 0;
+        let lastTime = performance.now();
+        const MAP_SIZE = 1000;
+        let currentSkin = 'default';
+        let bpXP = 0;
+        let bpLevel = 1;
+
+        // מערכת תעופה והשתגרות
+        let isFlying = false;
+        let lastSpaceTime = 0;
+        let yVelocity = 0;
+
+        let bossEvolutionStage = 0;
+        let isSplitScreen = false;
+        let isTimeRoom = false;
+        let player2 = null, camera2 = null, p2Head, p2Torso, p2LArm, p2RArm, p2LLeg, p2RLeg;
+        let keys2 = {};
+        let pitch2 = 0;
+        let bossHoldUntil = 0;
+        let attackCharge = 0;
+        let isChargingKame = false;
+        let currentAttackName = '';
+        let chargeOsc = null;
+        let chargeEffect = null;
+        
+        // שרשרת בוסים מחוזקת - מהירים וקטלניים יותר
+        const BOSS_LEVELS = [
+            // יקום 1
+            { name: "NAPPA", color: 0x885522, hp: 120000, speed: 0.24, scale: 1.1, hair: 0x663300 },
+            { name: "VEGETA PRINCE", color: 0x0033ff, hp: 180000, speed: 0.28, scale: 1.05, hair: 0x0000ff },
+            { name: "GOKU SSJ", color: 0xffff00, hp: 240000, speed: 0.33, scale: 1.1, hair: 0xffff00 },
+            { name: "GOHAN YOUNG", color: 0x99ff99, hp: 300000, speed: 0.30, scale: 1, hair: 0x33cc33 },
+            // יקום 2
+            { name: "ANDROID 17", color: 0x00ccff, hp: 260000, speed: 0.36, scale: 1, hair: 0x003300 },
+            { name: "ANDROID 18", color: 0xff88ff, hp: 280000, speed: 0.38, scale: 1, hair: 0x663366 },
+            { name: "FRIEZA FIRST FORM", color: 0xf7d873, hp: 340000, speed: 0.40, scale: 1.05, hair: 0xffd700 },
+            { name: "PERFECT CELL", color: 0x00ff00, hp: 420000, speed: 0.45, scale: 1.2, hair: 0x005500 },
+            // יקום 3
+            { name: "MAJIN VEGETA", color: 0xff0044, hp: 380000, speed: 0.42, scale: 1.15, hair: 0xff0000 },
+            { name: "DABURA", color: 0x9c4b00, hp: 420000, speed: 0.39, scale: 1.05, hair: 0x222222 },
+            { name: "MAJIN BUU", color: 0xffb6c1, hp: 520000, speed: 0.46, scale: 1.35, hair: 0xffc0cb },
+            { name: "KID BUU", color: 0xff69b4, hp: 580000, speed: 0.72, scale: 0.85, hair: 0xff1493 },
+            // יקום 4
+            { name: "CAULIFLA SSJ", color: 0xffcc00, hp: 360000, speed: 0.58, scale: 1.1, hair: 0xffff00 },
+            { name: "KALE LEGENDARY", color: 0x55ff55, hp: 470000, speed: 0.62, scale: 1.25, hair: 0x55ff55 },
+            { name: "JIREN FULL POWER", color: 0xff4500, hp: 600000, speed: 0.80, scale: 1.3, hair: 0xffffff },
+            { name: "TOPPO GOD", color: 0xff99ff, hp: 680000, speed: 0.58, scale: 1.15, hair: 0xff66ff },
+            // יקום 5 - יקום 6
+            { name: "BOTAMO", color: 0xffb84d, hp: 180000, speed: 0.35, scale: 1.3, hair: 0x964B00, special: "bounce" },
+            { name: "MAGETTA", color: 0xff6600, hp: 220000, speed: 0.42, scale: 1.15, hair: 0xff8800, special: "magma" },
+            { name: "FROST", color: 0xffffff, hp: 260000, speed: 0.50, scale: 1, hair: 0xffffff, special: "freeze" },
+            { name: "CABBA SSJ", color: 0xffff00, hp: 310000, speed: 0.55, scale: 1.05, hair: 0xffff00, special: "charge" },
+            // יקום 6
+            { name: "HIT", color: 0x222222, hp: 340000, speed: 0.88, scale: 1.2, hair: 0x000000, special: "time-skip" },
+            { name: "CHAMPA", color: 0xff9900, hp: 390000, speed: 0.52, scale: 1.2, hair: 0x985025, special: "supernova" },
+            { name: "MUTO GOKU", color: 0x00ffff, hp: 460000, speed: 0.60, scale: 1.1, hair: 0xffffff, special: "ki" },
+            { name: "ULTRA INSTINCT", color: 0xffffff, hp: 560000, speed: 0.90, scale: 1.25, hair: 0xffffff, special: "aura" },
+            // יקום 7
+            { name: "BEERUS", color: 0x800080, hp: 620000, speed: 0.83, scale: 1.0, hair: 0x4b0082 },
+            { name: "WHIS", color: 0x99ccff, hp: 680000, speed: 0.95, scale: 1.05, hair: 0xfff8e1 },
+            { name: "SKY RUIN", color: 0x4455ff, hp: 720000, speed: 0.60, scale: 1.2, hair: 0x2233ff, special: "gravity" },
+            { name: "DIEBURA", color: 0x222222, hp: 780000, speed: 0.70, scale: 1.3, hair: 0x111111, special: "dark" },
+            // יקום 8
+            { name: "BROLY SSJ", color: 0xadff2f, hp: 820000, speed: 0.72, scale: 1.5, hair: 0xadff2f },
+            { name: "LEGENDARY BROLY", color: 0x32cd32, hp: 980000, speed: 0.90, scale: 2.0, hair: 0x00ff00 },
+            { name: "GOLDEN FRIEZA", color: 0xffd700, hp: 740000, speed: 0.58, scale: 0.9, hair: 0xffd700 },
+            { name: "BLACK FRIEZA", color: 0x444444, hp: 1000000, speed: 0.80, scale: 1.0, hair: 0x222222 },
+            // יקום 9
+            { name: "SUPER SAIYAN BLUE", color: 0x00aaff, hp: 860000, speed: 0.80, scale: 1.15, hair: 0x00aaff },
+            { name: "ULTRA EGO", color: 0xaa00ff, hp: 920000, speed: 0.85, scale: 1.1, hair: 0xaa00ff },
+            { name: "MUI GOD", color: 0xffffff, hp: 1060000, speed: 0.96, scale: 1.3, hair: 0xffffff },
+            { name: "ZAMASU FUSED", color: 0x33cc99, hp: 1120000, speed: 0.75, scale: 1.2, hair: 0x66ffcc, special: "ki" },
+            // יקום 10
+            { name: "LORD BEERUS", color: 0x800080, hp: 1180000, speed: 0.88, scale: 1.05, hair: 0x4b0082 },
+            { name: "CHAOS SUPREME", color: 0xff3333, hp: 1260000, speed: 0.95, scale: 1.4, hair: 0xff3300, special: "chaos" },
+            { name: "DESTROYER DRAGON", color: 0x2233ff, hp: 1340000, speed: 1.00, scale: 1.35, hair: 0x1122ff, special: "void" },
+            { name: "UNIVERSE END", color: 0xff00ff, hp: 1500000, speed: 1.05, scale: 1.45, hair: 0xff55ff, special: "nova" },
+            { name: "VEGETA SSGSS", color: 0x0066ff, hp: 1580000, speed: 0.95, scale: 1.2, hair: 0x0099ff, special: "ki" },
+            { name: "GOKU MUI", color: 0xffffff, hp: 1660000, speed: 1.05, scale: 1.35, hair: 0xffffff, special: "instinct" },
+            { name: "BROLY DRAGON FIST", color: 0x22cc33, hp: 1740000, speed: 1.0, scale: 2.1, hair: 0x99ff00, special: "fury" },
+            { name: "ZAMASU BLACK", color: 0x33cc99, hp: 1820000, speed: 0.88, scale: 1.18, hair: 0x222277, special: "dark" },
+            { name: "VEGETA ULTRA EGO", color: 0xaa00ff, hp: 1900000, speed: 0.98, scale: 1.18, hair: 0xaa00ff, special: "ego" },
+            { name: "KAIOKEN GOKU", color: 0xff5500, hp: 1980000, speed: 1.1, scale: 1.12, hair: 0xffdd00, special: "rage" },
+            { name: "GOKU BLACK SUPER", color: 0x9900cc, hp: 2060000, speed: 0.94, scale: 1.15, hair: 0xff66ff, special: "dark" },
+            { name: "ULTRA INSTINCT GOD", color: 0xffffff, hp: 2140000, speed: 1.2, scale: 1.25, hair: 0xffffff, special: "instinct" }
+        ];
+
+        const UNIVERSE_CONFIGS = [
+            { id: 'u1', title: 'יקום 1 - סאגת הסאיאנים', startStage: 0 },
+            { id: 'u2', title: 'יקום 2 - סאגת הסל', startStage: 4 },
+            { id: 'u3', title: 'יקום 3 - סאגת הבו', startStage: 8 },
+            { id: 'u4', title: 'יקום 4 - טורניר הכוח', startStage: 12 },
+            { id: 'u5', title: 'יקום 5 - יקום 6', startStage: 16 },
+            { id: 'u6', title: 'יקום 6 - יקום 7', startStage: 20 },
+            { id: 'u7', title: 'יקום 7 - אלים ואלפות', startStage: 24 },
+            { id: 'u8', title: 'יקום 8 - ברולי ופריזה', startStage: 28 },
+            { id: 'u9', title: 'יקום 9 - חזיונות על', startStage: 32 },
+            { id: 'u10', title: 'יקום 10 - אסון קוסמי', startStage: 36 }
+        ];
+
+        const MAP_STYLES = [
+            { name: "Planet Namek", floor: 0x2e8b57, fog: 0x3a6f48, ring: 0x88bb55, sky: '#225533', tree: 0x227722, rock: 0x4a8f4a, style: 'namek' },
+            { name: "King Kai", floor: 0x7aa0ff, fog: 0x336699, ring: 0xffdd88, sky: '#1e345a', tree: 0xeeeeff, rock: 0x8899cc, style: 'kai' },
+            { name: "Cell Games", floor: 0x2c1a4b, fog: 0x47286d, ring: 0x9933ff, sky: '#1a0f2d', tree: 0x666688, rock: 0x443366, style: 'cell' },
+            { name: "Rocky Stadium", floor: 0x444444, fog: 0x222222, ring: 0x999999, sky: '#111111', tree: 0x4b4b4b, rock: 0x555555, style: 'rock' },
+            { name: "Broly Field", floor: 0x662211, fog: 0x331100, ring: 0xaa6622, sky: '#220000', tree: 0x335522, rock: 0x663322, style: 'broly' },
+            { name: "Planet Vegeta", floor: 0x553322, fog: 0x332211, ring: 0xff8844, sky: '#331100', tree: 0x883333, rock: 0x704622, style: 'vegeta' },
+            { name: "Supreme Kai Realm", floor: 0x112244, fog: 0x223366, ring: 0x88ffff, sky: '#001122', tree: 0x88ccff, rock: 0x445577, style: 'kai' }
+        ];
+
+        const TIME_CHAMBER_STYLE = { name: "Time Chamber", floor: 0x111133, fog: 0x332266, ring: 0x77ccff, sky: '#110033', tree: 0x88ccff, rock: 0x444477, style: 'time' };
+
+        let currentMapIndex = 0;
+        let currentMapStyle = MAP_STYLES[0];
+        let mapGroup = null;
+        let bossAura = null;
+        let audioContext = null;
+        let dogeTimeout = null;
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x55B4D4); 
+            scene.fog = new THREE.FogExp2(0x55B4D4, 0.002);
+            
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+            
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap; 
+            document.body.appendChild(renderer.domElement);
+            
+            const ambient = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambient);
+            
+            const sun = new THREE.DirectionalLight(0xffffff, 1.2);
+            sun.position.set(100, 200, 50); 
+            sun.castShadow = true;
+            sun.shadow.camera.left = -200;
+            sun.shadow.camera.right = 200;
+            sun.shadow.camera.top = 200;
+            sun.shadow.camera.bottom = -200;
+            sun.shadow.camera.far = 500;
+            sun.shadow.bias = -0.001;
+            scene.add(sun);
+
+            setMapStyle(currentMapIndex);
+            createDetailedMap();
+            createPlayerModel();
+            loadProgress();
+            updatePlayerSkin();
+            updateUI();
+            
+            document.getElementById('loading-msg').style.display = 'none';
+            document.getElementById('universe-grid').style.display = 'grid';
+            
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                if(camera2) {
+                    camera2.aspect = (window.innerWidth / 2) / window.innerHeight;
+                    camera2.updateProjectionMatrix();
+                }
+            });
+
+            animate();
+        }
+
+        function toggleShop(show) {
+            document.getElementById('shop-menu').style.display = show ? 'block' : 'none';
+            document.getElementById('main-btns').style.display = show ? 'none' : 'block';
+        }
+
+        function toggleSplitMode() {
+            isSplitScreen = !isSplitScreen;
+            document.getElementById('split-toggle-btn').innerText = isSplitScreen ? 'מצב 2 שחקנים: מופעל' : 'מצב 2 שחקנים: כבוי';
+            document.getElementById('loading-msg').innerText = isSplitScreen ? 'מצב מסך מחולק מוכן!' : 'בחר יקום כדי להתחיל את הקרב';
+            if(!isSplitScreen && player2) {
+                scene.remove(player2);
+                player2 = null;
+                camera2 = null;
+            }
+        }
+
+        function enterTimeRoom() {
+            isTimeRoom = true;
+            document.getElementById('loading-msg').innerText = 'נכנס לחדר הזמן...';
+            startGame('u7', isSplitScreen, true);
+        }
+
+        function buySkin(skinName, price) {
+            if (gold >= price) {
+                gold -= price;
+                currentSkin = skinName;
+                updatePlayerSkin();
+                updateUI();
+                saveProgress();
+                if (currentSkin === 'doge') showDogeOverlay();
+                alert("סקין נרכש והולבש בהצלחה!");
+            } else alert("אין לך מספיק זהב! לך להילחם.");
+        }
+
+        function buySenzu(price) {
+            if (gold >= price) {
+                gold -= price;
+                senzuBeans++;
+                updateUI();
+                saveProgress();
+                alert("רכשת שעועית סנזו! השתמש בה בקרב עם מקש H כדי להתרפא.");
+            } else alert("אין לך מספיק זהב!");
+        }
+
+        function updatePlayerSkin() {
+            let suitColor = 0x0000ff; 
+            if(currentSkin === 'vegeta') suitColor = 0x111166;
+            if(currentSkin === 'trunks') suitColor = 0x440088;
+            if(currentSkin === 'gokublack') suitColor = 0x222222;
+            if(currentSkin === 'champa') suitColor = 0xffaa00;
+            if(currentSkin === 'hit') suitColor = 0x111111;
+            if(currentSkin === 'cabba') suitColor = 0x005500;
+            if(currentSkin === 'kale') suitColor = 0x228822;
+            if(currentSkin === 'doge') suitColor = 0xffcc00;
+            if(currentSkin === 'goku') suitColor = 0xff8c00;
+            if(currentSkin === 'beerus') suitColor = 0x5533aa;
+            if(currentSkin === 'whis') suitColor = 0xeeccff;
+            if(currentSkin === 'jiren') suitColor = 0x333333;
+            if(currentSkin === 'broly') suitColor = 0x228822;
+            if(currentSkin === 'mugoku') suitColor = 0xffffff;
+            if(currentSkin === 'ultraego') suitColor = 0xaa00ff;
+            if(currentSkin === 'zamasu') suitColor = 0x33cc99;
+            
+            pTorso.material.color.setHex(suitColor);
+            pLLeg.material.color.setHex(suitColor);
+            pRLeg.material.color.setHex(suitColor);
+        }
+
+        function setUltraQuality() {
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1.2;
+            alert("איכות Ultra הופעלה! (תאורה מציאותית יותר)");
+        }
+
+        function setMapStyle(index) {
+            currentMapIndex = index;
+            currentMapStyle = MAP_STYLES[index] || MAP_STYLES[0];
+            document.getElementById('selected-map').innerText = currentMapStyle.name;
+            document.body.style.background = currentMapStyle.sky;
+            if (scene) {
+                scene.background = new THREE.Color(currentMapStyle.fog);
+                scene.fog.color = new THREE.Color(currentMapStyle.fog);
+            }
+        }
+
+        function clearMapGroup() {
+            if (!mapGroup) return;
+            mapGroup.traverse(obj => {
+                if (obj.geometry) obj.geometry.dispose();
+                if (obj.material) {
+                    if (Array.isArray(obj.material)) obj.material.forEach(m => m.dispose());
+                    else obj.material.dispose();
+                }
+            });
+            scene.remove(mapGroup);
+            mapGroup = null;
+        }
+
+        function selectMap(index) {
+            setMapStyle(index);
+            if (active) {
+                clearMapGroup();
+                createDetailedMap();
+            }
+        }
+
+        function initAudio() {
+            if (audioContext) return;
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            audioContext.resume && audioContext.resume();
+        }
+
+        function playSfx(type) {
+            initAudio();
+            if (!audioContext) return;
+            const now = audioContext.currentTime;
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            osc.connect(gain);
+            gain.connect(audioContext.destination);
+            gain.gain.setValueAtTime(0.08, now);
+            switch(type) {
+                case 'kame':
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(220, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+                    break;
+                case 'hit':
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(160, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+                    break;
+                case 'special':
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(340, now);
+                    gain.gain.setValueAtTime(0.12, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+                    break;
+                case 'kame-charge':
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(120, now);
+                    gain.gain.setValueAtTime(0.18, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+                    break;
+                case 'kame-release':
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(220, now);
+                    gain.gain.setValueAtTime(0.22, now);
+                    osc.frequency.exponentialRampToValueAtTime(620, now + 0.28);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+                    break;
+                default:
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(220, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+            }
+            osc.start(now);
+            osc.stop(now + 0.35);
+        }
+
+        function showDogeOverlay() {
+            const overlay = document.getElementById('doge-overlay');
+            overlay.style.display = 'flex';
+            clearTimeout(dogeTimeout);
+            dogeTimeout = setTimeout(() => overlay.style.display = 'none', 1200);
+        }
+
+        function addXP(amount) {
+            bpXP += amount;
+            if (bpXP >= 1000) {
+                bpLevel += Math.floor(bpXP / 1000);
+                bpXP = bpXP % 1000;
+                document.getElementById('bp-lvl').innerText = bpLevel;
+            }
+            document.getElementById('bp-progress').style.width = (bpXP / 10) + "%";
+            saveProgress();
+        }
+
+        function saveProgress() {
+            try {
+                localStorage.setItem('saiyanHunterGold', gold);
+                localStorage.setItem('saiyanHunterSenzu', senzuBeans);
+                localStorage.setItem('saiyanHunterBPXP', bpXP);
+                localStorage.setItem('saiyanHunterBPLevel', bpLevel);
+                localStorage.setItem('saiyanHunterSkin', currentSkin);
+            } catch (e) {
+                console.warn('Unable to save progress:', e);
+            }
+        }
+
+        function loadProgress() {
+            if (!window.localStorage) return;
+            const storedGold = parseInt(localStorage.getItem('saiyanHunterGold'));
+            const storedSenzu = parseInt(localStorage.getItem('saiyanHunterSenzu'));
+            const storedXP = parseInt(localStorage.getItem('saiyanHunterBPXP'));
+            const storedLvl = parseInt(localStorage.getItem('saiyanHunterBPLevel'));
+            const storedSkin = localStorage.getItem('saiyanHunterSkin');
+
+            if (!Number.isNaN(storedGold)) gold = storedGold;
+            if (!Number.isNaN(storedSenzu)) senzuBeans = storedSenzu;
+            if (!Number.isNaN(storedXP)) bpXP = storedXP;
+            if (!Number.isNaN(storedLvl)) bpLevel = storedLvl;
+            if (storedSkin) currentSkin = storedSkin;
+
+            if (bpXP >= 1000) {
+                bpLevel += Math.floor(bpXP / 1000);
+                bpXP = bpXP % 1000;
+            }
+            document.getElementById('bp-lvl').innerText = bpLevel;
+            document.getElementById('bp-progress').style.width = (bpXP / 10) + "%";
+        }
+
+        function updateUI() {
+            document.querySelectorAll('.gold-display').forEach(el => el.innerText = gold);
+            document.getElementById('senzu-lobby-display').innerText = senzuBeans;
+            document.getElementById('senzu-hud-display').innerText = senzuBeans;
+        }
+
+        function createDetailedMap() {
+            clearMapGroup();
+            mapGroup = new THREE.Group();
+
+            const floorGeo = new THREE.PlaneGeometry(MAP_SIZE, MAP_SIZE, 80, 80);
+            const pos = floorGeo.attributes.position;
+            for(let i=0; i<pos.count; i++) {
+                if (Math.random() > 0.75) pos.setZ(i, Math.random() * 4);
+            }
+            floorGeo.computeVertexNormals();
+            
+            const floorMat = new THREE.MeshStandardMaterial({color: currentMapStyle.floor, roughness: currentMapStyle.style === 'kai' ? 0.3 : 0.8, metalness: 0.1});
+            const floor = new THREE.Mesh(floorGeo, floorMat);
+            floor.rotation.x = -Math.PI / 2; 
+            floor.receiveShadow = true; 
+            mapGroup.add(floor);
+            
+            scene.background = new THREE.Color(currentMapStyle.fog);
+            scene.fog.color = new THREE.Color(currentMapStyle.fog);
+            document.body.style.background = currentMapStyle.sky;
+            
+            const ringGeo = new THREE.CylinderGeometry(80, 85, 2, 64);
+            const ringMat = new THREE.MeshStandardMaterial({color: currentMapStyle.ring, roughness: 0.4, emissive: currentMapStyle.style === 'cell' ? 0x6600ff : 0x000000, emissiveIntensity: 0.2});
+            const ring = new THREE.Mesh(ringGeo, ringMat);
+            ring.position.set(0, 1, 0);
+            ring.receiveShadow = true;
+            mapGroup.add(ring);
+
+            for(let i=0; i<120; i++) spawnMapTree(Math.random()*MAP_SIZE-MAP_SIZE/2, Math.random()*MAP_SIZE-MAP_SIZE/2);
+            for(let i=0; i<30; i++) spawnMapRock(Math.random()*600-300, Math.random()*600-300);
+            for(let i=0; i<15; i++) spawnEnergyPillar(Math.random()*MAP_SIZE-MAP_SIZE/2, Math.random()*MAP_SIZE-MAP_SIZE/2);
+
+            scene.add(mapGroup);
+        }
+
+        function spawnFortniteTree(x, z) {
+            if(Math.sqrt(x*x + z*z) < 100) return; 
+            const group = new THREE.Group();
+            const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.8, 5), new THREE.MeshStandardMaterial({color: 0x4a2e00}));
+            trunk.position.y = 2.5; 
+            trunk.castShadow = true;
+            group.add(trunk);
+            const leaves = new THREE.Mesh(new THREE.ConeGeometry(3, 7, 8), new THREE.MeshStandardMaterial({color: 0x006400}));
+            leaves.position.y = 7; 
+            leaves.castShadow = true;
+            group.add(leaves);
+            group.position.set(x, 0, z); 
+            scene.add(group);
+        }
+
+        function spawnFortniteBuilding(x, z) {
+            if(Math.sqrt(x*x + z*z) < 120) return; 
+            const group = new THREE.Group();
+            const height = 10 + Math.random() * 20;
+            const base = new THREE.Mesh(new THREE.BoxGeometry(15, height, 15), new THREE.MeshStandardMaterial({color: 0x888888}));
+            base.position.y = height/2; 
+            base.castShadow = true;
+            base.receiveShadow = true;
+            group.add(base);
+            group.position.set(x, 0, z); 
+            scene.add(group);
+        }
+
+        function spawnMapTree(x, z) {
+            if(Math.sqrt(x*x + z*z) < 100) return;
+            const group = new THREE.Group();
+            const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.7, 5), new THREE.MeshStandardMaterial({color: currentMapStyle.tree === 0xeeeeff ? 0xaaaaaa : 0x4a2e00}));
+            trunk.position.y = 2.5;
+            trunk.castShadow = true;
+            group.add(trunk);
+            const leaves = new THREE.Mesh(new THREE.ConeGeometry(currentMapStyle.style === 'broly' ? 4 : 3, 7, 8), new THREE.MeshStandardMaterial({color: currentMapStyle.tree, emissive: currentMapStyle.style === 'cell' ? 0x8855ff : 0x000000, emissiveIntensity: currentMapStyle.style === 'cell' ? 0.25 : 0}));
+            leaves.position.y = 7;
+            leaves.castShadow = true;
+            group.add(leaves);
+            group.position.set(x, 0, z);
+            mapGroup.add(group);
+        }
+
+        function spawnMapRock(x, z) {
+            if(Math.sqrt(x*x + z*z) < 80) return;
+            const size = 4 + Math.random()*8;
+            const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(size, 0), new THREE.MeshStandardMaterial({color: currentMapStyle.rock, roughness: 0.9}));
+            rock.position.set(x, size/2, z);
+            rock.castShadow = true;
+            rock.receiveShadow = true;
+            mapGroup.add(rock);
+        }
+
+        function spawnEnergyPillar(x, z) {
+            if(Math.sqrt(x*x + z*z) < 120) return;
+            const height = 6 + Math.random()*12;
+            const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 1.2, height, 12, 1, true), new THREE.MeshStandardMaterial({color: currentMapStyle.style === 'kai' ? 0x88ccff : 0xff55ff, transparent: true, opacity: 0.65, emissive: currentMapStyle.style === 'cell' ? 0x9900ff : 0x0000ff, emissiveIntensity: 0.4, side: THREE.DoubleSide}));
+            pillar.position.set(x, height/2, z);
+            pillar.castShadow = true;
+            mapGroup.add(pillar);
+        }
+
+        function createHumanoidModel(skinColor, suitColor, isBoss = false) {
+            const group = new THREE.Group();
+            const matSuit = new THREE.MeshStandardMaterial({color: suitColor, roughness: 0.6});
+            const matSkin = new THREE.MeshStandardMaterial({color: skinColor, roughness: 0.4});
+            
+            const torso = new THREE.Mesh(new THREE.BoxGeometry(1, 1.5, 0.6), matSuit);
+            torso.position.y = 2.25; 
+            torso.castShadow = true;
+            group.add(torso);
+            
+            const head = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.7, 0.7), matSkin);
+            head.position.y = 3.4; 
+            head.castShadow = true;
+            group.add(head);
+            
+            // הוספת עיניים לשחקן
+            const eyeWhiteMat = new THREE.MeshStandardMaterial({color: 0xffffff, roughness: 0.3});
+            const eyeIrisMat = new THREE.MeshStandardMaterial({color: 0x000000, roughness: 0.2, metalness: 0.1});
+            
+            const eyeWhiteL = new THREE.Mesh(new THREE.SphereGeometry(0.08, 10, 10), eyeWhiteMat);
+            eyeWhiteL.position.set(-0.15, 3.6, 0.32);
+            eyeWhiteL.castShadow = true;
+            head.add(eyeWhiteL);
+            
+            const eyeIrisL = new THREE.Mesh(new THREE.SphereGeometry(0.045, 8, 8), eyeIrisMat);
+            eyeIrisL.position.set(-0.15, 3.6, 0.36);
+            eyeIrisL.castShadow = true;
+            head.add(eyeIrisL);
+            
+            const eyeWhiteR = new THREE.Mesh(new THREE.SphereGeometry(0.08, 10, 10), eyeWhiteMat);
+            eyeWhiteR.position.set(0.15, 3.6, 0.32);
+            eyeWhiteR.castShadow = true;
+            head.add(eyeWhiteR);
+            
+            const eyeIrisR = new THREE.Mesh(new THREE.SphereGeometry(0.045, 8, 8), eyeIrisMat);
+            eyeIrisR.position.set(0.15, 3.6, 0.36);
+            eyeIrisR.castShadow = true;
+            head.add(eyeIrisR);
+            
+            // אף לשחקן
+            const noseMat = new THREE.MeshStandardMaterial({color: skinColor, roughness: 0.5});
+            const nose = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.12, 6), noseMat);
+            nose.position.set(0, 3.35, 0.35);
+            nose.rotation.set(Math.PI / 2, 0, 0);
+            head.add(nose);
+            
+            if(isBoss) {
+                const hairColor = BOSS_LEVELS[bossEvolutionStage].hair;
+                const hairMat = new THREE.MeshStandardMaterial({color: hairColor, emissive: hairColor, emissiveIntensity: 0.5});
+                for(let i=0; i<12; i++) {
+                    const spike = new THREE.Mesh(new THREE.ConeGeometry(0.15, 0.8, 4), hairMat);
+                    spike.position.set(Math.random()*0.6-0.3, 0.3, Math.random()*0.6-0.3);
+                    spike.rotation.set(Math.random()*0.5-0.25, 0, Math.random()*0.5-0.25);
+                    head.add(spike);
+                }
+            }
+            
+            const armGeo = new THREE.BoxGeometry(0.4, 1.4, 0.4);
+            armGeo.translate(0, -0.5, 0); 
+            
+            const lArm = new THREE.Mesh(armGeo, matSuit); 
+            lArm.position.set(-0.7, 2.8, 0); 
+            lArm.castShadow = true;
+            group.add(lArm);
+            
+            const rArm = new THREE.Mesh(armGeo, matSuit); 
+            rArm.position.set(0.7, 2.8, 0); 
+            rArm.castShadow = true;
+            group.add(rArm);
+            
+            const legGeo = new THREE.BoxGeometry(0.45, 1.5, 0.45);
+            legGeo.translate(0, -0.75, 0); 
+            
+            const lLeg = new THREE.Mesh(legGeo, matSuit); 
+            lLeg.position.set(-0.25, 1.5, 0); 
+            lLeg.castShadow = true;
+            group.add(lLeg);
+            
+            const rLeg = new THREE.Mesh(legGeo, matSuit); 
+            rLeg.position.set(0.25, 1.5, 0); 
+            rLeg.castShadow = true;
+            group.add(rLeg);
+            
+            return { group, head, torso, lArm, rArm, lLeg, rLeg };
+        }
+
+        function createBossModel(stageData) {
+            const group = new THREE.Group();
+            const name = stageData.name.toUpperCase();
+            const matSuit = new THREE.MeshStandardMaterial({color: stageData.color, roughness: 0.25, metalness: 0.35});
+            const matSkin = new THREE.MeshStandardMaterial({color: 0xffdbac, roughness: 0.4});
+            const matArmor = new THREE.MeshStandardMaterial({color: 0x222222, roughness: 0.2, metalness: 0.7});
+            const matHair = new THREE.MeshStandardMaterial({color: stageData.hair, emissive: stageData.hair, emissiveIntensity: 0.7});
+            const matSpecial = new THREE.MeshStandardMaterial({color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 0.55, transparent: true, opacity: 0.85});
+
+            let torso, chest, head, lArm, rArm, lLeg, rLeg;
+
+            // פונקציה ליצירת עיניים וגבות
+            function addFaceFeatures(headMesh) {
+                const eyeWhiteMat = new THREE.MeshStandardMaterial({color: 0xffffff, roughness: 0.3});
+                const eyeIrisMat = new THREE.MeshStandardMaterial({color: 0x000000, roughness: 0.2, metalness: 0.1});
+                const eyebrowMat = new THREE.MeshStandardMaterial({color: 0x333333, roughness: 0.6});
+                const noseMat = new THREE.MeshStandardMaterial({color: 0xffdbac, roughness: 0.5});
+                
+                // עיניים
+                const eyeWhiteL = new THREE.Mesh(new THREE.SphereGeometry(0.12, 12, 12), eyeWhiteMat);
+                eyeWhiteL.position.set(-0.16, 0.15, 0.38);
+                headMesh.add(eyeWhiteL);
+                
+                const eyeIrisL = new THREE.Mesh(new THREE.SphereGeometry(0.065, 10, 10), eyeIrisMat);
+                eyeIrisL.position.set(-0.16, 0.15, 0.42);
+                headMesh.add(eyeIrisL);
+                
+                const eyeWhiteR = new THREE.Mesh(new THREE.SphereGeometry(0.12, 12, 12), eyeWhiteMat);
+                eyeWhiteR.position.set(0.16, 0.15, 0.38);
+                headMesh.add(eyeWhiteR);
+                
+                const eyeIrisR = new THREE.Mesh(new THREE.SphereGeometry(0.065, 10, 10), eyeIrisMat);
+                eyeIrisR.position.set(0.16, 0.15, 0.42);
+                headMesh.add(eyeIrisR);
+                
+                // גבות
+                const eyebrowL = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.08, 8), eyebrowMat);
+                eyebrowL.position.set(-0.16, 0.35, 0.35);
+                eyebrowL.rotation.set(-0.1, 0, -0.3);
+                eyebrowL.scale.set(1.3, 1, 1.3);
+                headMesh.add(eyebrowL);
+                
+                const eyebrowR = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.08, 8), eyebrowMat);
+                eyebrowR.position.set(0.16, 0.35, 0.35);
+                eyebrowR.rotation.set(-0.1, 0, 0.3);
+                eyebrowR.scale.set(1.3, 1, 1.3);
+                headMesh.add(eyebrowR);
+                
+                // אף
+                const nose = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.15, 6), noseMat);
+                nose.position.set(0, 0.05, 0.42);
+                nose.rotation.set(Math.PI / 2, 0, 0);
+                headMesh.add(nose);
+            }
+
+            // בדוק שם דמות והעש מודל ייחודי
+            if (name.includes('GOKU') && !name.includes('BLACK') && !name.includes('KAIOKEN')) {
+                // גוקו סופר סאייה - גוף שרירי דק ובריא
+                // גוף ראשי
+                torso = new THREE.Mesh(new THREE.BoxGeometry(0.88, 1.55, 0.55), new THREE.MeshStandardMaterial({color: 0xffaa88, roughness: 0.4}));
+                torso.position.y = 3.25;
+                torso.castShadow = true;
+                group.add(torso);
+                
+                // שרירי בטן (abdominal)
+                const abs = new THREE.Mesh(new THREE.BoxGeometry(0.82, 1.2, 0.58), new THREE.MeshStandardMaterial({color: 0xf78844, roughness: 0.35}));
+                abs.position.set(0, 2.9, 0.02);
+                group.add(abs);
+                
+                // בצע (אזור הבטן התחתון)
+                const belly = new THREE.Mesh(new THREE.BoxGeometry(0.75, 0.35, 0.53), new THREE.MeshStandardMaterial({color: 0xff99aa, roughness: 0.5}));
+                belly.position.set(0, 2.55, 0.03);
+                group.add(belly);
+                
+                // ז'יי (הגי - הלבוש)
+                const gi = new THREE.Mesh(new THREE.BoxGeometry(1.05, 0.48, 0.7), new THREE.MeshStandardMaterial({color: 0xff6600, roughness: 0.4}));
+                gi.position.set(0, 2.72, 0);
+                gi.castShadow = true;
+                group.add(gi);
+                
+                const belt = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.16, 0.55), new THREE.MeshStandardMaterial({color: 0x000080, roughness: 0.4}));
+                belt.position.set(0, 2.64, 0);
+                belt.castShadow = true;
+                group.add(belt);
+                
+                // חזה שרירי
+                chest = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.65, 0.50), new THREE.MeshStandardMaterial({color: 0xffaa88, roughness: 0.35}));
+                chest.position.set(0, 3.28, 0.12);
+                group.add(chest);
+                
+                // פעטוראליס (שרירי חזה בולטים)
+                const pectoral = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.55, 0.2), new THREE.MeshStandardMaterial({color: 0xff8844, roughness: 0.3, metalness: 0.05}));
+                pectoral.position.set(-0.3, 3.35, 0.28);
+                pectoral.castShadow = true;
+                group.add(pectoral);
+                
+                const pectoral2 = pectoral.clone();
+                pectoral2.position.x = 0.3;
+                group.add(pectoral2);
+                
+                head = new THREE.Mesh(new THREE.SphereGeometry(0.36, 18, 18), matSkin);
+                head.position.y = 4.55;
+                head.castShadow = true;
+                group.add(head);
+                addFaceFeatures(head);
+                
+                // שיער צהוב בוהק וחד
+                const hairMat = new THREE.MeshStandardMaterial({color: 0xffff00, emissive: 0xffffa0, emissiveIntensity: 1.1});
+                for(let i=0; i<16; i++) {
+                    const spike = new THREE.Mesh(new THREE.ConeGeometry(0.11, 0.88, 5), hairMat);
+                    const angle = (Math.PI * 2 / 16) * i;
+                    spike.position.set(Math.cos(angle) * 0.36, 4.88, Math.sin(angle) * 0.36);
+                    spike.rotation.set(-Math.PI / 2.2, angle, 0);
+                    group.add(spike);
+                }
+            } else if (name.includes('VEGETA') && !name.includes('ULTRA') && !name.includes('SSGSS')) {
+                // וג'יטה - גוף זקוף, גברי חזק עם שרירים ברורים
+                // גוף ראשי חזק
+                torso = new THREE.Mesh(new THREE.BoxGeometry(1.0, 1.65, 0.66), new THREE.MeshStandardMaterial({color: 0x0044dd, roughness: 0.5}));
+                torso.position.y = 3.22;
+                torso.castShadow = true;
+                group.add(torso);
+                
+                // שכבת שרירים
+                const vegMuscles = new THREE.Mesh(new THREE.BoxGeometry(0.95, 1.55, 0.68), new THREE.MeshStandardMaterial({color: 0x0033aa, roughness: 0.35}));
+                vegMuscles.position.set(0, 3.15, 0.01);
+                vegMuscles.castShadow = true;
+                group.add(vegMuscles);
+                
+                // חזה שרירי בולט מאוד
+                const vegChest = new THREE.Mesh(new THREE.BoxGeometry(0.88, 0.72, 0.58), new THREE.MeshStandardMaterial({color: 0x0044dd, roughness: 0.3, metalness: 0.1}));
+                vegChest.position.set(0, 3.32, 0.15);
+                vegChest.castShadow = true;
+                group.add(vegChest);
+                
+                // פעטוראליס חזקות
+                const vegPec = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.6, 0.25), new THREE.MeshStandardMaterial({color: 0x003399, roughness: 0.28}));
+                vegPec.position.set(-0.35, 3.4, 0.32);
+                vegPec.castShadow = true;
+                group.add(vegPec);
+                
+                const vegPec2 = vegPec.clone();
+                vegPec2.position.x = 0.35;
+                group.add(vegPec2);
+                
+                // אבדומינל חזק (בטן עם שרירים)
+                for(let i = 0; i < 3; i++) {
+                    const abdomen = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.28, 0.6), new THREE.MeshStandardMaterial({color: 0x0055ff, roughness: 0.32}));
+                    abdomen.position.set(0, 3.3 - i * 0.35, 0.05);
+                    group.add(abdomen);
+                }
+                
+                const waist = new THREE.Mesh(new THREE.BoxGeometry(1.02, 0.4, 0.58), matArmor);
+                waist.position.set(0, 2.75, 0);
+                group.add(waist);
+                
+                chest = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.75, 0.53), new THREE.MeshStandardMaterial({color: 0x001a80, roughness: 0.3, metalness: 0.2}));
+                chest.position.set(0, 3.28, 0.13);
+                group.add(chest);
+                
+                head = new THREE.Mesh(new THREE.SphereGeometry(0.42, 18, 18), matSkin);
+                head.position.y = 4.65;
+                head.castShadow = true;
+                group.add(head);
+                addFaceFeatures(head);
+                head.scale.set(0.95, 1.1, 0.9);
+                
+                // שיער כחול/שחור חד וכעוס
+                const vegHair = new THREE.MeshStandardMaterial({color: 0x0000aa, emissive: 0x000066, emissiveIntensity: 0.5});
+                for(let i=0; i<16; i++) {
+                    const spike = new THREE.Mesh(new THREE.ConeGeometry(0.14, 1.0, 5), vegHair);
+                    const angle = (Math.PI * 2 / 16) * i;
+                    spike.position.set(Math.cos(angle) * 0.41, 5.0, Math.sin(angle) * 0.41);
+                    spike.rotation.set(-Math.PI / 2.1, angle + Math.random() * 0.15, 0);
+                    group.add(spike);
+                }
+            } else if (name.includes('BROLY')) {
+                // ברולי - ענק עצום עם גוף מפוח וחזק
+                torso = new THREE.Mesh(new THREE.BoxGeometry(1.42, 1.88, 0.92), new THREE.MeshStandardMaterial({color: 0x228822, roughness: 0.5}));
+                torso.position.y = 3.35;
+                torso.castShadow = true;
+                group.add(torso);
+                
+                const fur = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.48, 0.82), new THREE.MeshStandardMaterial({color: 0x1a1a1a, roughness: 0.7}));
+                fur.position.set(0, 3.08, -0.24);
+                group.add(fur);
+                
+                chest = new THREE.Mesh(new THREE.BoxGeometry(1.15, 0.9, 0.62), matArmor);
+                chest.position.set(0, 3.32, 0.14);
+                group.add(chest);
+                
+                head = new THREE.Mesh(new THREE.SphereGeometry(0.5, 18, 18), matSkin);
+                head.position.y = 4.8;
+                head.castShadow = true;
+                group.add(head);
+                addFaceFeatures(head);
+                head.scale.set(1.2, 1.1, 1.03);
+                
+                // שיער ירוק כהה וחזק
+                const brolyHair = new THREE.MeshStandardMaterial({color: 0x00dd00, emissive: 0x00aa00, emissiveIntensity: 0.8});
+                for(let i=0; i<18; i++) {
+                    const spike = new THREE.Mesh(new THREE.ConeGeometry(0.16, 1.1, 5), brolyHair);
+                    const angle = (Math.PI * 2 / 18) * i;
+                    spike.position.set(Math.cos(angle) * 0.5, 5.22, Math.sin(angle) * 0.5);
+                    spike.rotation.set(-Math.PI / 2.05, angle, 0);
+                    group.add(spike);
+                }
+            } else if (name.includes('FRIEZA')) {
+                // פריזה - זר כסדר, זנב, פנים זרות
+                torso = new THREE.Mesh(new THREE.BoxGeometry(1.08, 1.52, 0.72), new THREE.MeshStandardMaterial({color: 0xf7d873, roughness: 0.4}));
+                torso.position.y = 3.15;
+                torso.castShadow = true;
+                group.add(torso);
+                
+                const armorParts = new THREE.Mesh(new THREE.BoxGeometry(1.02, 0.78, 0.58), new THREE.MeshStandardMaterial({color: 0xcaa847, roughness: 0.2, metalness: 0.4}));
+                armorParts.position.set(0, 3.32, 0.13);
+                group.add(armorParts);
+                
+                head = new THREE.Mesh(new THREE.ConeGeometry(0.35, 0.65, 12), new THREE.MeshStandardMaterial({color: 0xf7d873, roughness: 0.3}));
+                head.position.y = 4.38;
+                head.castShadow = true;
+                group.add(head);
+                addFaceFeatures(head);
+                
+                // זנב
+                const tail = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.11, 4.0, 10), new THREE.MeshStandardMaterial({color: 0xf7d873, roughness: 0.4}));
+                tail.position.set(0, 1.75, 0.5);
+                tail.rotation.x = Math.PI / 2;
+                tail.castShadow = true;
+                group.add(tail);
+            } else if (name.includes('CELL')) {
+                // סל - גוף ירוק עם חלקים שחורים
+                torso = new THREE.Mesh(new THREE.BoxGeometry(1.22, 1.7, 0.78), new THREE.MeshStandardMaterial({color: 0x00cc00, roughness: 0.5}));
+                torso.position.y = 3.2;
+                torso.castShadow = true;
+                group.add(torso);
+                
+                const segments = new THREE.Mesh(new THREE.BoxGeometry(1.05, 0.85, 0.62), new THREE.MeshStandardMaterial({color: 0x001a1a, roughness: 0.3}));
+                segments.position.set(0, 2.95, 0.28);
+                group.add(segments);
+                
+                chest = new THREE.Mesh(new THREE.BoxGeometry(0.92, 0.78, 0.53), new THREE.MeshStandardMaterial({color: 0x006600, roughness: 0.4}));
+                chest.position.set(0, 3.28, 0.12);
+                group.add(chest);
+                
+                head = new THREE.Mesh(new THREE.SphereGeometry(0.4, 16, 16), matSkin);
+                head.position.y = 4.45;
+                head.castShadow = true;
+                group.add(head);
+                addFaceFeatures(head);
+                
+                // זנב
+                const cellTail = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 4.3, 10), new THREE.MeshStandardMaterial({color: 0x00cc00, roughness: 0.4}));
+                cellTail.position.set(0, 1.7, 0.5);
+                cellTail.rotation.x = Math.PI / 2;
+                cellTail.castShadow = true;
+                group.add(cellTail);
+            } else if (name.includes('BUU')) {
+                // מג'ין בו - גוף כדורי, ורוד וחמוד
+                torso = new THREE.Mesh(new THREE.SphereGeometry(0.98, 18, 18), new THREE.MeshStandardMaterial({color: 0xff99cc, roughness: 0.6, emissive: 0xff66aa, emissiveIntensity: 0.25}));
+                torso.position.y = 2.8;
+                torso.castShadow = true;
+                group.add(torso);
+                
+                head = new THREE.Mesh(new THREE.SphereGeometry(0.55, 18, 18), new THREE.MeshStandardMaterial({color: 0xff99cc, roughness: 0.5}));
+                head.position.y = 4.35;
+                head.castShadow = true;
+                group.add(head);
+                addFaceFeatures(head);
+            } else if (name.includes('JIREN')) {
+                // וג'ירן - גברי חזק, ראש פרופורציוני קטן
+                torso = new THREE.Mesh(new THREE.BoxGeometry(1.28, 1.78, 0.82), new THREE.MeshStandardMaterial({color: 0xff4400, roughness: 0.6}));
+                torso.position.y = 3.22;
+                torso.castShadow = true;
+                group.add(torso);
+                
+                chest = new THREE.Mesh(new THREE.BoxGeometry(1.08, 0.88, 0.65), matArmor);
+                chest.position.set(0, 3.28, 0.15);
+                group.add(chest);
+                
+                head = new THREE.Mesh(new THREE.SphereGeometry(0.38, 18, 18), matSkin);
+                head.position.y = 4.6;
+                head.castShadow = true;
+                group.add(head);
+                addFaceFeatures(head);
+                head.scale.set(1.0, 0.9, 0.95);
+                
+                const ring = new THREE.Mesh(new THREE.TorusGeometry(0.5, 0.07, 8, 50), matSpecial);
+                ring.rotation.x = Math.PI / 2;
+                ring.position.y = 4.35;
+                group.add(ring);
+            } else {
+                // מודל ברירת מחדל לדמויות אחרות
+                torso = new THREE.Mesh(new THREE.BoxGeometry(1.4, 1.8, 0.9), matSuit);
+                torso.position.y = 3.1;
+                torso.castShadow = true;
+                group.add(torso);
+
+                chest = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.9, 0.65), matArmor);
+                chest.position.set(0, 3.2, 0.16);
+                group.add(chest);
+
+                head = new THREE.Mesh(new THREE.SphereGeometry(0.45, 18, 18), matSkin);
+                head.position.y = 4.4;
+                head.castShadow = true;
+                group.add(head);
+                addFaceFeatures(head);
+
+                const hairGroup = new THREE.Group();
+                const hairCount = 8 + Math.floor(stageData.scale * 2);
+                for(let i=0; i<hairCount; i++) {
+                    const spike = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.85, 5), matHair);
+                    const angle = (Math.PI * 2 / hairCount) * i;
+                    spike.position.set(Math.cos(angle) * 0.42, 4.75, Math.sin(angle) * 0.42);
+                    spike.rotation.set(-Math.PI / 2 + Math.random() * 0.2, angle, 0);
+                    hairGroup.add(spike);
+                }
+                group.add(hairGroup);
+            }
+
+            // זרועות ורגליים לכל הדמויות
+            const shoulderL = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.35, 0.9), matArmor);
+            shoulderL.position.set(-0.9, 3.5, 0);
+            shoulderL.rotation.z = 0.3;
+            shoulderL.castShadow = true;
+            group.add(shoulderL);
+
+            const shoulderR = shoulderL.clone();
+            shoulderR.position.x = 0.9;
+            shoulderR.rotation.z = -0.3;
+            group.add(shoulderR);
+
+            const armGeo = new THREE.BoxGeometry(0.45, 1.5, 0.45);
+            armGeo.translate(0, -0.75, 0);
+            lArm = new THREE.Mesh(armGeo, matSuit);
+            lArm.position.set(-1.1, 3.0, 0);
+            lArm.castShadow = true;
+            group.add(lArm);
+            rArm = new THREE.Mesh(armGeo, matSuit);
+            rArm.position.set(1.1, 3.0, 0);
+            rArm.castShadow = true;
+            group.add(rArm);
+
+            const legGeo = new THREE.BoxGeometry(0.55, 1.8, 0.55);
+            legGeo.translate(0, -0.9, 0);
+            lLeg = new THREE.Mesh(legGeo, matSuit);
+            lLeg.position.set(-0.4, 1.3, 0);
+            lLeg.castShadow = true;
+            group.add(lLeg);
+            rLeg = new THREE.Mesh(legGeo, matSuit);
+            rLeg.position.set(0.4, 1.3, 0);
+            rLeg.castShadow = true;
+            group.add(rLeg);
+
+            const aura = new THREE.Group();
+            const auraColor = stageData.color;
+            for(let i=0; i<4; i++) {
+                const ring = new THREE.Mesh(
+                    new THREE.TorusGeometry(2.5 + i*0.3, 0.1, 8, 50),
+                    new THREE.MeshBasicMaterial({color: auraColor, transparent: true, opacity: 0.15 - i*0.02, side: THREE.DoubleSide})
+                );
+                ring.rotation.x = Math.PI / 2;
+                aura.add(ring);
+            }
+            aura.position.y = 3.2;
+            aura.userData = { spin: 0.01 + stageData.scale * 0.002 };
+            group.add(aura);
+
+            return { group, head, torso, lArm, rArm, lLeg, rLeg, aura };
+        }
+
+        function createPlayerModel() {
+            const m = createHumanoidModel(0xffdbac, 0x0000ff);
+            player = m.group; pHead = m.head; pTorso = m.torso; pLArm = m.lArm; pRArm = m.rArm; pLLeg = m.lLeg; pRLeg = m.rLeg;
+            scene.add(player);
+            
+            aura = new THREE.Group();
+            for(let i=0; i<3; i++) {
+                let a = new THREE.Mesh(
+                    new THREE.ConeGeometry(2, 6, 16, 1, true), 
+                    new THREE.MeshBasicMaterial({color: 0xffff00, transparent: true, opacity: 0.3, side: THREE.DoubleSide, depthWrite: false})
+                );
+                a.rotation.y = (Math.PI / 3) * i;
+                aura.add(a);
+            }
+            aura.position.y = 0.5;
+            aura.visible = false; 
+            player.add(aura);
+        }
+
+        function createPlayer2Model() {
+            const m = createHumanoidModel(0xffdbac, 0xff4444);
+            player2 = m.group; p2Head = m.head; p2Torso = m.torso; p2LArm = m.lArm; p2RArm = m.rArm; p2LLeg = m.lLeg; p2RLeg = m.rLeg;
+            scene.add(player2);
+            camera2 = new THREE.PerspectiveCamera(75, (window.innerWidth / 2) / window.innerHeight, 0.1, 1000);
+            camera2.position.set(0, 3.4, 0.3);
+            player2.add(camera2);
+            player2.position.set(8, 2, 0);
+        }
+
+        function spawnBoss() {
+            if(boss) scene.remove(boss);
+            const currentBossData = BOSS_LEVELS[bossEvolutionStage];
+            const m = createBossModel(currentBossData);
+            boss = m.group;
+            bHead = m.head; bTorso = m.torso; bLArm = m.lArm; bRArm = m.rArm; bLLeg = m.lLeg; bRLeg = m.rLeg;
+            bossAura = m.aura;
+
+            boss.scale.set(currentBossData.scale, currentBossData.scale, currentBossData.scale);
+            
+            const angle = Math.random() * Math.PI * 2;
+            boss.position.set(Math.cos(angle) * 80, 2, Math.sin(angle) * 80);
+            scene.add(boss);
+            
+            bHP = currentBossData.hp;
+            document.getElementById('boss-name-ui').innerText = "BOSS: " + currentBossData.name;
+            document.getElementById('boss-name-ui').style.color = '#' + currentBossData.color.toString(16).padStart(6, '0');
+            if (bossEvolutionStage === 9) {
+                bossHoldUntil = performance.now() + 5000;
+                document.getElementById('status').innerText = 'BOSS PAUSED - 5 שניות';
+            } else {
+                bossHoldUntil = 0;
+            }
+        }
+
+        function startGame(universe = 'u1', split, timeRoom = false) {
+            if (typeof split === 'undefined') split = isSplitScreen;
+            const universeConfig = UNIVERSE_CONFIGS.find(u => u.id === universe) || UNIVERSE_CONFIGS[0];
+            active = true; isPaused = false;
+            isSplitScreen = split;
+            isTimeRoom = timeRoom;
+            pHP = 150;
+            bossEvolutionStage = universeConfig.startStage;
+            document.getElementById('loading-msg').innerText = isTimeRoom ? 'נכנס לחדר הזמן...' : `פותח ${universeConfig.title}...`;
+            player.position.set(0, 2, 0); 
+            pitch = 0;
+            isFlying = false;
+            yVelocity = 0;
+            if(isSplitScreen) {
+                if(!player2) createPlayer2Model();
+                player2.position.set(8, 2, 0);
+            } else {
+                if(player2) { scene.remove(player2); player2 = null; camera2 = null; }
+            }
+            
+            document.getElementById('result-msg').style.display = 'none';
+            document.getElementById('shop-menu').style.display = 'none';
+            document.getElementById('lobby').style.display = 'none';
+            document.getElementById('hud').style.display = 'block';
+            document.getElementById('crosshair').style.display = 'block';
+            
+            clearMapGroup();
+            if(isTimeRoom) {
+                currentMapStyle = TIME_CHAMBER_STYLE;
+            } else {
+                setMapStyle(currentMapIndex);
+            }
+            createDetailedMap();
+            bullets.forEach(b => scene.remove(b));
+            bullets = [];
+
+            updateUI();
+            spawnBoss();
+            if(!isSplitScreen) renderer.domElement.requestPointerLock();
+        }
+
+        function returnToLobby() {
+            active = false; document.exitPointerLock();
+            if(player2) { scene.remove(player2); player2 = null; camera2 = null; }
+            document.getElementById('lobby').style.display = 'flex';
+            document.getElementById('hud').style.display = 'none';
+            document.getElementById('crosshair').style.display = 'none';
+            document.getElementById('result-msg').style.display = 'block';
+            updateUI();
+        }
+
+        function togglePause() {
+            if(!active) return;
+            isPaused = !isPaused;
+            document.getElementById('pause-overlay').style.display = isPaused ? 'flex' : 'none';
+            if(!isPaused) document.body.requestPointerLock(); else document.exitPointerLock();
+        }
+
+        window.addEventListener('keydown', e => {
+            const k = e.key.toLowerCase();
+            const code = e.code.toLowerCase();
+            if(k === 'p' || k === 'escape') togglePause();
+            if(!active || isPaused) return;
+            
+            if(['arrowup','arrowdown','arrowleft','arrowright','up','down','left','right','u','o'].includes(k) || ['arrowup','arrowdown','arrowleft','arrowright'].includes(code)) {
+                keys2[k] = true;
+                keys2[code] = true;
+            }
+            
+            if(e.key === ' ') {
+                keys['space'] = true;
+                if (!e.repeat) {
+                    let now = performance.now();
+                    if (now - lastSpaceTime < 350) { 
+                        isFlying = !isFlying;
+                        lastSpaceTime = 0; 
+                    } else {
+                        lastSpaceTime = now;
+                        let currentFloor = Math.sqrt(player.position.x**2 + player.position.z**2) > 85 ? 0 : 2;
+                        if (!isFlying && player.position.y <= currentFloor + 0.1) {
+                            yVelocity = 0.8; 
+                        }
+                    }
+                }
+            }
+            
+            if(e.key === 'Shift') keys['shift'] = true;
+            keys[k] = true;
+            
+            if(k === '0') isTPS = !isTPS;
+            if(k === 'r') transform(1); 
+            if(k === 't') transform(2); 
+            if(k === 'y') transform(3); 
+            if(k === 'f') transform(4);
+            if(k === 'g') transform(5);
+            if(k >= '1' && k <= '4') shoot(k);
+            if(k === '5') startKameCharge();
+            if(k >= '6' && k <= '8') shoot(k);
+            if(isSplitScreen && player2) {
+                if(k === 'v') shoot('1', player2, pitch2);
+                if(k === 'b') shoot('2', player2, pitch2);
+                if(k === 'n') shoot('3', player2, pitch2);
+                if(k === 'm') shoot('4', player2, pitch2);
+            }
+            
+            if(k === 'e') {
+                const dir = new THREE.Vector3(0,0,-1).applyQuaternion(player.quaternion);
+                player.position.addScaledVector(dir, 20); 
+                let currentFloor = Math.sqrt(player.position.x**2 + player.position.z**2) > 85 ? 0 : 2;
+                if(player.position.y < currentFloor) player.position.y = currentFloor;
+            }
+
+            if(k === 'h') {
+                if(senzuBeans > 0 && pHP < 150) {
+                    senzuBeans--;
+                    pHP = 150;
+                    updateUI();
+                    document.getElementById('hp-player').style.background = "#ffffff";
+                    setTimeout(() => { document.getElementById('hp-player').style.background = "linear-gradient(90deg, #00aa00, #55ff55)"; }, 200);
+                }
+            }
+        });
+
+        window.addEventListener('keyup', e => {
+            const k = e.key.toLowerCase();
+            const code = e.code.toLowerCase();
+            if(e.key === ' ') keys['space'] = false;
+            if(e.key === 'Shift') keys['shift'] = false;
+            if(k === '5') releaseKameCharge();
+            keys[k] = false;
+            if(['arrowup','arrowdown','arrowleft','arrowright','up','down','left','right','u','o'].includes(k) || ['arrowup','arrowdown','arrowleft','arrowright'].includes(code)) {
+                keys2[k] = false;
+                keys2[code] = false;
+            }
+        });
+
+        window.addEventListener('mousedown', e => {
+            if(active && !isPaused && e.button === 0) shoot('1');
+        });
+
+        function transform(lv) {
+            if(ssj === lv) return; 
+            ssj = lv; 
+            aura.visible = true;
+            let colors = [0xffff00, 0x00aaff, 0xffffff, 0xff8800, 0x55ff55];
+            let names = ["SUPER SAIYAN", "SSJ BLUE", "ULTRA INSTINCT", "CABBA SSJ", "KALE LEGENDARY"];
+            
+            aura.children.forEach(a => {
+                a.material.color.setHex(colors[lv-1]);
+                a.scale.set(1 + lv*0.2, 1 + lv*0.2, 1 + lv*0.2); 
+            });
+            
+            let statusEl = document.getElementById('status');
+            statusEl.innerText = names[lv-1];
+            statusEl.style.color = '#' + colors[lv-1].toString(16).padStart(6, '0');
+            statusEl.style.textShadow = `0 0 10px #${colors[lv-1].toString(16).padStart(6, '0')}`;
+        }
+
+        function updateAttackUI() {
+            const attackEl = document.getElementById('attack-name-ui');
+            const chargeEl = document.getElementById('charge-bar');
+            const chargeContainer = document.getElementById('charge-container');
+            if(attackEl) attackEl.innerText = currentAttackName;
+            if(chargeEl && chargeContainer) {
+                const width = Math.min(100, Math.max(0, (attackCharge / 5) * 100));
+                chargeEl.style.width = width + '%';
+                if(isChargingKame || currentAttackName.includes('קמאמההה') || currentAttackName.includes('Kamehameha')) {
+                    chargeContainer.style.display = 'block';
+                } else {
+                    chargeContainer.style.display = 'none';
+                }
+            }
+        }
+
+        function startKameCharge() {
+            if(!active || isPaused || isChargingKame) return;
+            isChargingKame = true;
+            attackCharge = 0;
+            currentAttackName = 'קמאמההה טעינה...';
+            updateAttackUI();
+            createChargeEffect();
+            startChargeTone();
+            playSfx('kame-charge');
+        }
+
+        function releaseKameCharge() {
+            if(!isChargingKame) return;
+            isChargingKame = false;
+            const strength = Math.min(5, Math.max(0.5, attackCharge));
+            const mode = strength >= 4 ? 'MAX' : strength >= 2.5 ? 'CHARGED' : 'QUICK';
+            currentAttackName = `קמאמההה ${mode}!`;
+            updateAttackUI();
+            destroyChargeEffect();
+            shoot('5', player, pitch, strength);
+            stopChargeTone();
+            playSfx('kame-release');
+            setTimeout(() => {
+                if (currentAttackName.startsWith('קמאמההה')) {
+                    currentAttackName = '';
+                    updateAttackUI();
+                }
+            }, 1200);
+        }
+
+        function startChargeTone() {
+            initAudio();
+            if (!audioContext) return;
+            if(chargeOsc) return;
+            const now = audioContext.currentTime;
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(140, now);
+            gain.gain.setValueAtTime(0.22, now);
+            osc.connect(gain);
+            gain.connect(audioContext.destination);
+            osc.start(now);
+            chargeOsc = { osc, gain };
+        }
+
+        function stopChargeTone() {
+            if(!chargeOsc) return;
+            const now = audioContext.currentTime;
+            chargeOsc.gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+            chargeOsc.osc.frequency.exponentialRampToValueAtTime(520, now + 0.28);
+            chargeOsc.osc.stop(now + 0.3);
+            chargeOsc = null;
+        }
+
+        // פונקציית הירי - שדרוג עצום לקמהאמהא
+        function createChargeEffect() {
+            if (chargeEffect || !player) return;
+            chargeEffect = new THREE.Group();
+            const orb = new THREE.Mesh(
+                new THREE.SphereGeometry(1.2, 20, 20),
+                new THREE.MeshStandardMaterial({color: 0x33ccff, emissive: 0x88eeff, emissiveIntensity: 0.9, transparent: true, opacity: 0.8})
+            );
+            const ring = new THREE.Mesh(
+                new THREE.TorusGeometry(1.8, 0.18, 12, 40),
+                new THREE.MeshBasicMaterial({color: 0x44ddff, transparent: true, opacity: 0.6})
+            );
+            ring.rotation.x = Math.PI / 2;
+            orb.add(ring);
+            chargeEffect.add(orb);
+            chargeEffect.position.set(0, 3.2, -1.2);
+            player.add(chargeEffect);
+        }
+
+        function destroyChargeEffect() {
+            if (!chargeEffect) return;
+            player.remove(chargeEffect);
+            chargeEffect.traverse(obj => {
+                if (obj.geometry) obj.geometry.dispose();
+                if (obj.material) obj.material.dispose();
+            });
+            chargeEffect = null;
+        }
+
+        function createAttackModel(type, powerColor) {
+            switch(type) {
+                case '1': {
+                    const core = new THREE.Mesh(
+                        new THREE.SphereGeometry(0.5, 16, 16),
+                        new THREE.MeshStandardMaterial({color: powerColor, emissive: powerColor, emissiveIntensity: 0.7, transparent: true, opacity: 0.92})
+                    );
+                    const ring = new THREE.Mesh(
+                        new THREE.TorusGeometry(0.85, 0.13, 10, 40),
+                        new THREE.MeshBasicMaterial({color: powerColor, transparent: true, opacity: 0.45})
+                    );
+                    ring.rotation.x = Math.PI / 2;
+                    core.add(ring);
+                    return core;
+                }
+                case '2': {
+                    const disk = new THREE.Mesh(
+                        new THREE.TorusGeometry(2.2, 0.35, 16, 64),
+                        new THREE.MeshStandardMaterial({color: 0xffcc00, emissive: 0xffdd55, emissiveIntensity: 0.6, transparent: true, opacity: 0.85})
+                    );
+                    disk.rotation.x = Math.PI / 2;
+                    disk.userData = { spin: 0.16 };
+                    return disk;
+                }
+                case '3': {
+                    const beam = new THREE.Group();
+                    const core = new THREE.Mesh(
+                        new THREE.CylinderGeometry(0.35, 0.35, 18, 12),
+                        new THREE.MeshStandardMaterial({color: 0xaa00ff, emissive: 0xcc66ff, emissiveIntensity: 0.8, transparent: true, opacity: 0.95})
+                    );
+                    const glow = new THREE.Mesh(
+                        new THREE.CylinderGeometry(0.65, 0.65, 18, 12),
+                        new THREE.MeshBasicMaterial({color: 0xdd88ff, transparent: true, opacity: 0.35})
+                    );
+                    core.rotation.x = Math.PI / 2;
+                    glow.rotation.x = Math.PI / 2;
+                    beam.add(core);
+                    beam.add(glow);
+                    return beam;
+                }
+                case '4': {
+                    const beam = new THREE.Group();
+                    const body = new THREE.Mesh(
+                        new THREE.CylinderGeometry(3.2, 3.2, 25, 24),
+                        new THREE.MeshStandardMaterial({color: 0xffff88, emissive: 0xffffbb, emissiveIntensity: 0.7, transparent: true, opacity: 0.85})
+                    );
+                    const flare = new THREE.Mesh(
+                        new THREE.TorusGeometry(3.8, 0.2, 10, 50),
+                        new THREE.MeshBasicMaterial({color: 0xffee88, transparent: true, opacity: 0.4})
+                    );
+                    body.rotation.x = Math.PI / 2;
+                    flare.rotation.x = Math.PI / 2;
+                    beam.add(body);
+                    beam.add(flare);
+                    return beam;
+                }
+                case '5': {
+                    const kame = new THREE.Group();
+                    const beam = new THREE.Mesh(
+                        new THREE.CylinderGeometry(3.6, 3.6, 55, 32),
+                        new THREE.MeshStandardMaterial({color: 0x88ffff, emissive: 0xccffff, emissiveIntensity: 0.9, transparent: true, opacity: 0.85})
+                    );
+                    const core = new THREE.Mesh(
+                        new THREE.CylinderGeometry(1.8, 1.8, 55, 32),
+                        new THREE.MeshStandardMaterial({color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 1.0, transparent: true, opacity: 0.95})
+                    );
+                    const ring = new THREE.Mesh(
+                        new THREE.TorusGeometry(4.2, 0.18, 12, 40),
+                        new THREE.MeshBasicMaterial({color: 0x33ccff, transparent: true, opacity: 0.45})
+                    );
+                    beam.rotation.x = Math.PI / 2;
+                    core.rotation.x = Math.PI / 2;
+                    ring.rotation.x = Math.PI / 2;
+                    kame.add(beam);
+                    kame.add(core);
+                    kame.add(ring);
+                    kame.position.y += 0.5;
+                    kame.userData = { pulse: 0.03 };
+                    return kame;
+                }
+                case '6': {
+                    const orb = new THREE.Mesh(
+                        new THREE.SphereGeometry(6, 32, 32),
+                        new THREE.MeshStandardMaterial({color: 0x00aaff, emissive: 0x66ddff, emissiveIntensity: 0.7, transparent: true, opacity: 0.8})
+                    );
+                    const aura = new THREE.Mesh(
+                        new THREE.SphereGeometry(7.5, 28, 28),
+                        new THREE.MeshBasicMaterial({color: 0x99ddff, transparent: true, opacity: 0.24})
+                    );
+                    aura.userData = { pulse: 0.015 };
+                    orb.add(aura);
+                    return orb;
+                }
+                case '7': {
+                    const rapid = new THREE.Group();
+                    for (let i = 0; i < 4; i++) {
+                        const segment = new THREE.Mesh(
+                            new THREE.SphereGeometry(0.45, 12, 12),
+                            new THREE.MeshStandardMaterial({color: 0xff5500, emissive: 0xff8855, emissiveIntensity: 0.7, transparent: true, opacity: 0.95})
+                        );
+                        segment.position.z = -i * 3.2;
+                        rapid.add(segment);
+                    }
+                    rapid.rotation.x = Math.PI / 2;
+                    return rapid;
+                }
+                case '8': {
+                    const nova = new THREE.Mesh(
+                        new THREE.SphereGeometry(8, 24, 24),
+                        new THREE.MeshStandardMaterial({color: 0xffcc00, emissive: 0xff9922, emissiveIntensity: 0.8, transparent: true, opacity: 0.75})
+                    );
+                    const flare = new THREE.Mesh(
+                        new THREE.TorusGeometry(9.2, 0.25, 10, 50),
+                        new THREE.MeshBasicMaterial({color: 0xffcc55, transparent: true, opacity: 0.45})
+                    );
+                    flare.rotation.x = Math.PI / 2;
+                    nova.add(flare);
+                    nova.userData = { spin: 0.08 };
+                    return nova;
+                }
+                default: {
+                    return new THREE.Mesh(
+                        new THREE.SphereGeometry(0.5, 16, 16),
+                        new THREE.MeshStandardMaterial({color: powerColor, emissive: powerColor, emissiveIntensity: 0.7, transparent: true, opacity: 0.92})
+                    );
+                }
+            }
+        }
+
+        function shoot(type, actor = player, actorPitch = pitch, charge = 0) {
+            let powerColor = 0xffff00; 
+            if(ssj === 2) powerColor = 0x00aaff;
+            if(ssj === 3) powerColor = 0xffffff;
+            if(currentSkin === 'goku') powerColor = 0xff8c00;
+            if(currentSkin === 'beerus') powerColor = 0x9966ff;
+            if(currentSkin === 'whis') powerColor = 0xff99ff;
+            if(currentSkin === 'jiren') powerColor = 0x999999;
+            if(currentSkin === 'broly') powerColor = 0x55ff55;
+            if(currentSkin === 'mugoku') powerColor = 0xffffff;
+            if(currentSkin === 'ultraego') powerColor = 0xaa00ff;
+            if(currentSkin === 'zamasu') powerColor = 0x33cc99;
+            if(currentSkin === 'gokublack' && ssj >= 1) powerColor = 0xff00ff;
+            if(currentSkin === 'doge') powerColor = 0xffd700;
+
+            let b = createAttackModel(type, powerColor);
+            let isBeam = false;
+            let damageMult = 1;
+            let speedMult = 4;
+            let isDestructo = false;
+
+            switch(type) {
+                case '2':
+                    damageMult = 2.5;
+                    speedMult = 5;
+                    isDestructo = true;
+                    currentAttackName = 'Kaio-ken Blast';
+                    break;
+                case '3':
+                    isBeam = true;
+                    damageMult = 3.5;
+                    speedMult = 12;
+                    currentAttackName = 'Energy Cannon';
+                    break;
+                case '4':
+                    isBeam = true;
+                    damageMult = 6;
+                    speedMult = 8;
+                    currentAttackName = 'Final Flash';
+                    break;
+                case '5':
+                    isBeam = true;
+                    const boost = Math.max(1, Math.min(5, charge));
+                    damageMult = 12 + boost * 4;
+                    speedMult = 10 + boost * 1.5;
+                    b.scale.set(1 + boost * 0.16, 1 + boost * 0.16, 1 + boost * 0.16);
+                    if(boost >= 4) {
+                        powerColor = 0x66ffff;
+                        b.traverse(obj => { if(obj.material) obj.material.color.setHex(powerColor); });
+                    }
+                    currentAttackName = `Kamehameha ${boost >= 4 ? 'MAX' : boost >= 2.5 ? 'CHARGED' : 'QUICK'}`;
+                    break;
+                case '6':
+                    damageMult = 15;
+                    speedMult = 1.5;
+                    currentAttackName = 'Genki Dama';
+                    break;
+                case '7':
+                    isBeam = true;
+                    damageMult = 8;
+                    speedMult = 14;
+                    currentAttackName = 'Rapid Strike';
+                    break;
+                case '8':
+                    damageMult = 18;
+                    speedMult = 1.2;
+                    currentAttackName = 'Supernova';
+                    break;
+                default:
+                    currentAttackName = 'Ki Blast';
+                    break;
+            }
+            updateAttackUI();
+            
+            const bulletGroup = new THREE.Group();
+            bulletGroup.add(b);
+            
+            const dir = new THREE.Vector3(0,0,-1).applyQuaternion(actor.quaternion);
+            dir.applyAxisAngle(new THREE.Vector3(1,0,0).applyQuaternion(actor.quaternion), actorPitch);
+            
+            bulletGroup.position.copy(actor.position);
+            bulletGroup.position.y += (type === '6') ? 7 : 2.8; 
+            
+            bulletGroup.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,-1), dir);
+            
+            bulletGroup.userData = { 
+                dir: dir, 
+                dmg: 40 * damageMult * (1+ssj*1.5), 
+                isBeam: isBeam,
+                speedMult: speedMult,
+                isDestructo: isDestructo,
+                life: 0,
+                owner: actor === player2 ? 'player2' : 'player1'
+            };
+            bullets.push(bulletGroup); 
+            scene.add(bulletGroup);
+            if(type === '5') {
+                if(charge > 1) playSfx('kame-release');
+                else playSfx('kame');
+            }
+            else if(type === '8' || type === '6' || type === '2') playSfx('special');
+            else playSfx('hit');
+        }
+
+        document.addEventListener('mousemove', e => {
+            if(active && !isPaused && document.pointerLockElement) {
+                player.rotation.y -= e.movementX * 0.002;
+                pitch -= e.movementY * 0.002;
+                pitch = Math.max(-1.4, Math.min(1.4, pitch));
+            }
+        });
+
+        function animate() {
+            requestAnimationFrame(animate);
+            if(!active || isPaused) return;
+            
+            const time = performance.now();
+            const delta = (time - lastTime) / 16;
+            lastTime = time;
+
+            let speed = (0.5 + ssj * 0.3) * delta;
+            let isMoving = false;
+            
+            if(keys['w']) { player.translateZ(-speed); isMoving = true; }
+            if(keys['s']) { player.translateZ(speed); isMoving = true; }
+            if(keys['a']) { player.translateX(-speed); isMoving = true; }
+            if(keys['d']) { player.translateX(speed); isMoving = true; }
+            
+            if(isSplitScreen && player2) {
+                let speed2 = 0.45 * delta;
+                if(keys2['arrowup']) { player2.translateZ(-speed2); }
+                if(keys2['arrowdown']) { player2.translateZ(speed2); }
+                if(keys2['arrowleft']) { player2.translateX(-speed2); }
+                if(keys2['arrowright']) { player2.translateX(speed2); }
+                if(keys2['u']) { player2.rotation.y += 0.03 * delta; }
+                if(keys2['o']) { player2.rotation.y -= 0.03 * delta; }
+                let floor2 = Math.sqrt(player2.position.x**2 + player2.position.z**2) > 85 ? 0 : 2;
+                if(player2.position.y < floor2) player2.position.y = floor2;
+            }
+            
+            let floorHeight = 2; 
+            if(Math.sqrt(player.position.x**2 + player.position.z**2) > 85) floorHeight = 0; 
+            
+            if (isFlying) {
+                if(keys['space']) player.position.y += speed;
+                if(keys['shift']) player.position.y -= speed;
+                yVelocity = 0; 
+            } else {
+                yVelocity -= 0.04 * delta; 
+                player.position.y += yVelocity * delta;
+            }
+
+            if(player.position.y < floorHeight) {
+                player.position.y = floorHeight;
+                yVelocity = 0; 
+            }
+
+            if(isMoving && player.position.y <= floorHeight + 0.1 && !isFlying) {
+                let walkCycle = Math.sin(time * 0.015);
+                pLLeg.rotation.x = walkCycle * 0.6;
+                pRLeg.rotation.x = -walkCycle * 0.6;
+                pLArm.rotation.x = -walkCycle * 0.6;
+                pRArm.rotation.x = walkCycle * 0.6;
+            } else {
+                pLLeg.rotation.x = 0; pRLeg.rotation.x = 0; 
+                pLArm.rotation.x = 0; pRArm.rotation.x = 0;
+            }
+
+            if(aura.visible) {
+                aura.rotation.y += 0.1 * delta;
+                aura.position.y = Math.sin(time * 0.005) * 0.2 + 0.5; 
+            }
+            if(isChargingKame) {
+                attackCharge = Math.min(5, attackCharge + delta * 0.014);
+                currentAttackName = `Kamehameha Charging ${Math.round((attackCharge / 5) * 100)}%`;
+                updateAttackUI();
+                if(chargeOsc && audioContext) {
+                    chargeOsc.frequency.setValueAtTime(120 + attackCharge * 20, audioContext.currentTime);
+                }
+            }
+            if(bossAura) {
+                bossAura.rotation.y += bossAura.userData.spin * delta;
+            }
+
+            if(isTPS) { 
+                camera.position.set(0, 4 + pitch*2, 10); 
+                camera.lookAt(0, 3, -10); 
+                player.add(camera);
+                pHead.visible = pTorso.visible = pLArm.visible = pRArm.visible = true;
+            } else { 
+                camera.position.set(0, 3.4, 0.3); 
+                camera.rotation.set(pitch, 0, 0); 
+                player.add(camera);
+                pHead.visible = pTorso.visible = false; 
+                pLArm.visible = pRArm.visible = true; 
+            }
+
+            let currentBossData = BOSS_LEVELS[bossEvolutionStage];
+            let bossTarget = player;
+            if(isSplitScreen && player2) {
+                const dist1 = boss.position.distanceTo(player.position);
+                const dist2 = boss.position.distanceTo(player2.position);
+                bossTarget = dist2 < dist1 ? player2 : player;
+            }
+
+            if (bossEvolutionStage === 9 && time < bossHoldUntil) {
+                currentAttackName = 'BOSS STOPPED לזמן קצר';
+                document.getElementById('status').innerText = 'BOSS PAUSED - 5 שניות';
+                updateAttackUI();
+                bLLeg.rotation.x = 0;
+                bRLeg.rotation.x = 0;
+                bLArm.rotation.x = 0;
+                bRArm.rotation.x = 0;
+            } else {
+                let bDir = new THREE.Vector3().subVectors(bossTarget.position, boss.position).normalize();
+                boss.position.addScaledVector(bDir, currentBossData.speed * delta);
+                boss.lookAt(bossTarget.position.x, boss.position.y, bossTarget.position.z);
+                
+                let bossWalk = Math.sin(time * 0.02 * (1 + bossEvolutionStage));
+                bLLeg.rotation.x = bossWalk * 0.8;
+                bRLeg.rotation.x = -bossWalk * 0.8;
+                bLArm.rotation.x = -bossWalk * 0.5;
+                bRArm.rotation.x = bossWalk * 0.5;
+
+                if (bossEvolutionStage === 9) {
+                    document.getElementById('status').innerText = 'BOSS 9 ACTIVE';
+                    if (currentAttackName === 'BOSS STOPPED לזמן קצר') {
+                        currentAttackName = '';
+                        updateAttackUI();
+                    }
+                }
+            }
+
+            // העליתי משמעותית את הנזק שהבוסים עושים בטווח קרוב
+            const bossSpecial = currentBossData.special;
+            if(bossSpecial === 'time-skip' && Math.random() < 0.0015 * delta) {
+                pHP -= 18;
+                yVelocity -= 0.08;
+            }
+            if(bossSpecial === 'supernova' && Math.random() < 0.001 * delta) {
+                pHP -= 22;
+            }
+            if(bossSpecial === 'freeze' && Math.random() < 0.001 * delta) {
+                yVelocity -= 0.04;
+            }
+            if(bossSpecial === 'rage' && Math.random() < 0.0008 * delta) {
+                pHP -= 12;
+            }
+            if(bossSpecial === 'charge' && Math.random() < 0.001 * delta) {
+                pHP -= 10;
+            }
+            if(bossSpecial === 'ki' && Math.random() < 0.0012 * delta) {
+                pHP -= 16;
+            }
+            if(bossSpecial === 'instinct' && Math.random() < 0.001 * delta) {
+                pHP -= 20;
+                yVelocity -= 0.03;
+            }
+            if(bossSpecial === 'fury' && Math.random() < 0.0015 * delta) {
+                pHP -= 24;
+            }
+            if(bossSpecial === 'dark' && Math.random() < 0.0013 * delta) {
+                pHP -= 18;
+            }
+            if(bossSpecial === 'ego' && Math.random() < 0.0013 * delta) {
+                pHP -= 22;
+            }
+            if(bossSpecial === 'shockwave' && boss.position.distanceTo(bossTarget.position) < 22) {
+                pHP -= 12 * delta;
+            }
+
+            if(boss.position.distanceTo(player.position) < 4 * currentBossData.scale) {
+                pHP -= (1.0 + bossEvolutionStage * 0.6) * delta;
+                bLArm.rotation.x = -Math.PI/2; 
+            }
+
+            bullets.forEach((b, i) => {
+                b.position.addScaledVector(b.userData.dir, b.userData.speedMult * delta);
+                b.userData.life += delta;
+                
+                if(b.userData.isDestructo && b.children[0]) {
+                    b.children[0].rotation.z += 0.4 * delta; 
+                }
+                if(b.userData.spin) {
+                    b.rotation.z += b.userData.spin * delta;
+                }
+                if(b.userData.pulse) {
+                    const pulseScale = 1 + Math.sin(time * 0.02) * b.userData.pulse;
+                    b.scale.set(pulseScale, pulseScale, pulseScale);
+                }
+                
+                let hitboxRange = 5 * currentBossData.scale;
+                if (b.userData.speedMult === 1.5) hitboxRange += 4; // גנקי דמה
+                if (b.userData.isBeam && b.userData.speedMult === 10) hitboxRange += 4; // קמהאמהא רחב יותר
+
+                if(b.position.distanceTo(boss.position) < hitboxRange) {
+                    bHP -= b.userData.dmg;
+                    boss.position.addScaledVector(b.userData.dir, (b.userData.isBeam ? 2 : 0.5));
+                    
+                    if(!b.userData.isBeam) { 
+                        scene.remove(b); 
+                        bullets.splice(i, 1); 
+                        return; 
+                    }
+                }
+                
+                let bulletOwner = (b.userData.owner === 'player2' && player2) ? player2 : player;
+                if(b.userData.life > 100 || b.position.distanceTo(bulletOwner.position) > 600) {
+                    scene.remove(b);
+                    bullets.splice(i, 1);
+                }
+            });
+
+            if(pHP <= 0) {
+                if(isTimeRoom) {
+                    pHP = 150;
+                } else {
+                    returnToLobby();
+                }
+            }
+            if(isSplitScreen && player2 && player2.position.distanceTo(boss.position) < 4 * currentBossData.scale) {
+                // Simple second-player collision damage
+                pHP -= 0.15 * delta;
+            }
+            if(bHP <= 0) { 
+                gold += 500 + (bossEvolutionStage * 500); 
+                saveProgress();
+                addXP(400);
+                
+                bossEvolutionStage++;
+                if(bossEvolutionStage >= BOSS_LEVELS.length) {
+                    alert("מדהים! הפכת לאל ההרס החדש! ניצחת את כל היקום!");
+                    location.reload();
+                } else {
+                    spawnBoss(); 
+                    pHP = 150; 
+                    updateUI();
+                }
+            }
+
+            document.getElementById('hp-boss').style.width = Math.max(0, (bHP/BOSS_LEVELS[bossEvolutionStage].hp)*100) + "%";
+            document.getElementById('hp-player').style.width = Math.max(0, (pHP/150)*100) + "%";
+            
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+            if(isSplitScreen && player2 && camera2) {
+                renderer.setScissorTest(true);
+                renderer.setViewport(0, 0, w / 2, h);
+                renderer.setScissor(0, 0, w / 2, h);
+                camera.aspect = (w / 2) / h;
+                camera.updateProjectionMatrix();
+                renderer.render(scene, camera);
+
+                renderer.setViewport(w / 2, 0, w / 2, h);
+                renderer.setScissor(w / 2, 0, w / 2, h);
+                camera2.aspect = (w / 2) / h;
+                camera2.updateProjectionMatrix();
+                renderer.render(scene, camera2);
+                renderer.setScissorTest(false);
+            } else {
+                renderer.setViewport(0, 0, w, h);
+                renderer.render(scene, camera);
+            }
+        }
+        
+        window.onload = init;
+    </script>
+</body>
+</html>
